@@ -200,11 +200,11 @@ export default function ChatWidget() {
                                             <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 rounded-full flex items-center justify-center font-bold">
                                                 {user.name.charAt(0)}
                                             </div>
-                                            <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-gray-800", onlineUsers.has(user.id) ? "bg-emerald-500" : "bg-gray-400")}></div>
+                                            <div className={cn("absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-gray-800", (user.is_online || onlineUsers.has(user.id)) ? "bg-emerald-500" : "bg-gray-400")}></div>
                                         </div>
                                         <div>
                                             <div className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{user.name}</div>
-                                            <div className="text-xs text-gray-500">{onlineUsers.has(user.id) ? 'En ligne' : 'Hors ligne'}</div>
+                                            <div className="text-xs text-gray-500">{(user.is_online || onlineUsers.has(user.id)) ? 'En ligne' : 'Hors ligne'}</div>
                                         </div>
                                     </button>
                                 ))}
@@ -224,7 +224,7 @@ export default function ChatWidget() {
                                             &larr; Retour
                                         </button>
                                         <div className="flex items-center gap-2 ml-2">
-                                            <div className={cn("w-2 h-2 rounded-full", onlineUsers.has(activeUser.id) ? "bg-emerald-500" : "bg-gray-400")}></div>
+                                            <div className={cn("w-2 h-2 rounded-full", (activeUser.is_online || onlineUsers.has(activeUser.id)) ? "bg-emerald-500" : "bg-gray-400")}></div>
                                             <span className="font-bold text-sm text-gray-800 dark:text-gray-200">{activeUser.name}</span>
                                         </div>
                                     </div>

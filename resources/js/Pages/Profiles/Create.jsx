@@ -21,7 +21,7 @@ const steps = [
 
 export default function Create({ projects = [] }) {
     const { data, setData, post, processing, errors } = useForm({
-        full_name: '', cin: '', cin_validity: '', birth_date: '', birth_city: '', 
+        matricule: '', full_name: '', cin: '', cin_validity: '', birth_date: '', birth_city: '', 
         nationality: 'Maroc', religion: '', education_level: '', education_specialty: '', 
         marital_status: '', children_count: '', cin_address: '', origin_city: '', 
         current_address: '', current_city: '', email: '', phone_1: '', phone_2: '', 
@@ -183,9 +183,15 @@ export default function Create({ projects = [] }) {
                                                 </div>
                                             </div>
 
-                                            <div className="space-y-2">
-                                                <InputLabel value="Nom et prénom *" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.full_name} onChange={e => setData('full_name', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" required />
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <InputLabel value="Matricule / Référence" className="text-gray-600 dark:text-gray-400 font-bold" />
+                                                    <TextInput value={data.matricule} onChange={e => setData('matricule', e.target.value)} className="w-full bg-indigo-50/50 border-indigo-200 dark:border-indigo-800 dark:bg-indigo-900/10 rounded-xl" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <InputLabel value="Nom et prénom *" className="text-gray-600 dark:text-gray-400" />
+                                                    <TextInput value={data.full_name} onChange={e => setData('full_name', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" required />
+                                                </div>
                                             </div>
 
                                             <div className="space-y-2">

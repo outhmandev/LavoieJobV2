@@ -24,6 +24,11 @@ class User extends Authenticatable implements Auditable
         'name',
         'email',
         'password',
+        'last_seen_at',
+    ];
+
+    protected $appends = [
+        'is_online',
     ];
 
     /**
@@ -46,6 +51,7 @@ class User extends Authenticatable implements Auditable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'last_seen_at' => 'datetime',
         ];
     }
 
@@ -72,5 +78,15 @@ class User extends Authenticatable implements Auditable
     public function timeEntries()
     {
         return $this->hasMany(TimeEntry::class);
+    }
+
+    public function isOnline()
+    {
+        return $this->last_seen_at && $this->last_seen_at->gt(now()->subMinutes(5));
+    }
+
+    public function getIsOnlineAttribute()
+    {
+        return $this->isOnline();
     }
 }

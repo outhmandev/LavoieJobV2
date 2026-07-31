@@ -11,6 +11,7 @@ class Project extends Model implements Auditable
     use HasFactory;
     use \OwenIt\Auditing\Auditable;
 
+    public $timestamps = false;
     protected $fillable = ['name', 'status'];
 
     public function users()

@@ -11,7 +11,7 @@ class ProfileController extends Controller
 {
     public function index(): JsonResponse
     {
-        $profiles = Profile::latest()->paginate(15);
+        $profiles = Profile::orderByDesc('id')->paginate(15);
         return response()->json($profiles);
     }
 

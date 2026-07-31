@@ -18,19 +18,19 @@ export default function Index({ profiles, filters, options }) {
     };
 
     const applyFilters = (e) => {
-        e.preventDefault();
-        router.get(route('profiles.index'), filterValues, { 
-            preserveState: true, 
-            preserveScroll: true 
+        e.preventDefault(); 
+        router.get(route('profiles.index'), filterValues, {
+            preserveState: true,
+            preserveScroll: true
         });
     };
 
     const clearFilters = () => {
         const emptyFilters = { project_id: '', reference: '', nom: '', ville: '', statut: '' };
         setFilterValues(emptyFilters);
-        router.get(route('profiles.index'), {}, { 
-            preserveState: true, 
-            preserveScroll: true 
+        router.get(route('profiles.index'), {}, {
+            preserveState: true,
+            preserveScroll: true
         });
     };
 
@@ -43,8 +43,8 @@ export default function Index({ profiles, filters, options }) {
                         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage available professionals and candidate pool.</p>
                     </div>
                     <div className="mt-4 md:mt-0">
-                        <Link 
-                            href={route('profiles.create')} 
+                        <Link
+                            href={route('profiles.create')}
                             className="inline-flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-indigo-700 hover:shadow-md transition-all duration-200"
                         >
                             <FiPlus size={18} />
@@ -61,15 +61,15 @@ export default function Index({ profiles, filters, options }) {
                     <FiFilter className="text-gray-400" />
                     <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Advanced Filters</h3>
                 </div>
-                
+
                 <form onSubmit={applyFilters}>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                         {/* Project Filter */}
                         <div>
                             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Project</label>
-                            <select 
-                                name="project_id" 
-                                value={filterValues.project_id} 
+                            <select
+                                name="project_id"
+                                value={filterValues.project_id}
                                 onChange={handleFilterChange}
                                 className="w-full text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
                             >
@@ -79,14 +79,14 @@ export default function Index({ profiles, filters, options }) {
                                 ))}
                             </select>
                         </div>
-                        
+
                         {/* Reference Filter */}
                         <div>
                             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Reference (CIN/Matricule)</label>
-                            <input 
-                                type="text" 
-                                name="reference" 
-                                value={filterValues.reference} 
+                            <input
+                                type="text"
+                                name="reference"
+                                value={filterValues.reference}
                                 onChange={handleFilterChange}
                                 placeholder="Search ref/cin..."
                                 className="w-full text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
@@ -96,10 +96,10 @@ export default function Index({ profiles, filters, options }) {
                         {/* Nom Filter */}
                         <div>
                             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Nom Profile</label>
-                            <input 
-                                type="text" 
-                                name="nom" 
-                                value={filterValues.nom} 
+                            <input
+                                type="text"
+                                name="nom"
+                                value={filterValues.nom}
                                 onChange={handleFilterChange}
                                 placeholder="Search name..."
                                 className="w-full text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
@@ -109,10 +109,10 @@ export default function Index({ profiles, filters, options }) {
                         {/* Ville Filter */}
                         <div>
                             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Ville</label>
-                            <input 
-                                type="text" 
-                                name="ville" 
-                                value={filterValues.ville} 
+                            <input
+                                type="text"
+                                name="ville"
+                                value={filterValues.ville}
                                 onChange={handleFilterChange}
                                 placeholder="Search city..."
                                 className="w-full text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
@@ -122,9 +122,9 @@ export default function Index({ profiles, filters, options }) {
                         {/* Statut Filter */}
                         <div>
                             <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Statut Profile</label>
-                            <select 
-                                name="statut" 
-                                value={filterValues.statut} 
+                            <select
+                                name="statut"
+                                value={filterValues.statut}
                                 onChange={handleFilterChange}
                                 className="w-full text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
                             >
@@ -135,17 +135,17 @@ export default function Index({ profiles, filters, options }) {
                             </select>
                         </div>
                     </div>
-                    
+
                     <div className="mt-4 flex items-center gap-3 justify-end">
-                        <button 
-                            type="button" 
+                        <button
+                            type="button"
                             onClick={clearFilters}
                             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors"
                         >
                             <FiX /> Clear Filters
                         </button>
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
                         >
                             <FiSearch /> Search Profiles
@@ -159,6 +159,7 @@ export default function Index({ profiles, filters, options }) {
                     <table className="w-full text-left border-collapse min-w-max">
                         <thead>
                             <tr className="bg-gray-50/80 dark:bg-gray-800/80 border-b border-gray-100 dark:border-gray-700/50">
+                                <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Matricule</th>
                                 <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Candidate Name</th>
                                 <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">CIN / Ref</th>
                                 <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Project</th>
@@ -171,6 +172,9 @@ export default function Index({ profiles, filters, options }) {
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                             {profiles.data.map(profile => (
                                 <tr key={profile.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors group">
+                                    <td className="py-4 px-6 text-sm font-mono font-medium text-indigo-600 dark:text-indigo-400">
+                                        {profile.reference || <span className="text-gray-300">-</span>}
+                                    </td>
                                     <td className="py-4 px-6">
                                         <div className="flex items-center gap-3">
                                             <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 flex items-center justify-center font-bold text-sm">
@@ -183,16 +187,15 @@ export default function Index({ profiles, filters, options }) {
                                         </div>
                                     </td>
                                     <td className="py-4 px-6 text-sm font-mono text-gray-600 dark:text-gray-300">
-                                        {profile.cin || profile.matricule || <span className="text-gray-300">-</span>}
+                                        {profile.cin || <span className="text-gray-300">-</span>}
                                     </td>
                                     <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">{profile.project?.name || <span className="text-gray-300">-</span>}</td>
                                     <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">{profile.job || <span className="text-gray-300">-</span>}</td>
                                     <td className="py-4 px-6 text-sm">
-                                        <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${
-                                            profile.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 
-                                            profile.status === 'inactive' ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' :
-                                            'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
-                                        }`}>
+                                        <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${profile.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
+                                                profile.status === 'inactive' ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' :
+                                                    'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+                                            }`}>
                                             {profile.status || 'pending'}
                                         </span>
                                     </td>
@@ -223,7 +226,7 @@ export default function Index({ profiles, filters, options }) {
                             ))}
                             {profiles.data.length === 0 && (
                                 <tr>
-                                    <td colSpan="7" className="py-12 text-center">
+                                    <td colSpan="8" className="py-12 text-center">
                                         <div className="flex flex-col items-center justify-center text-gray-500">
                                             <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
                                                 <FiUserCheck size={28} className="text-gray-400" />

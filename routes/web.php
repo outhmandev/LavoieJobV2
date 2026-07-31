@@ -23,7 +23,58 @@ Route::get('/dashboard', function (Illuminate\Http\Request $request) {
     if (strtolower($request->user()->role) === 'client') {
         return redirect()->route('portal.dashboard');
     }
-    return Inertia::render('Dashboard');
+    
+    $totalClients = \App\Models\Client::count();
+    $activeProfiles = \App\Models\Profile::where('status', 'active')->count();
+    $openAssignments = \App\Models\Assignment::where('status', 'active')->count();
+    
+    // Convert honoraire to numeric for sum if needed, or use a query. 
+    // Wait, honoraire is a string in DB, so we might need to be careful.
+    // Let's just use assignment's agreed price, or if it's 0, default to something.
+    $monthlyRevenue = \App\Models\Assignment::whereMonth('created_at', now()->month)
+                                            ->whereYear('created_at', now()->year)
+                                            ->sum('agreed_price');
+
+    // Recent activity: let's get the 4 most recently created clients/profiles/assignments
+    $recentClients = \App\Models\Client::latest('created_at')->take(4)->get()->map(function($client) {
+        $time = $client->created_at ? \Carbon\Carbon::parse($client->created_at)->diffForHumans() : 'Unknown';
+        return [
+            'id' => 'c' . $client->id,
+            'action' => 'New Client Registered',
+            'name' => $client->nom ?? 'Unknown Client',
+            'time' => $time,
+            'status' => 'completed',
+            'created_at' => $client->created_at
+        ];
+    });
+
+    $recentProfiles = \App\Models\Profile::orderBy('id', 'desc')->take(4)->get()->map(function($profile) {
+        // Handle profiles not casting created_at automatically
+        $time = $profile->created_at ? \Carbon\Carbon::parse($profile->created_at)->diffForHumans() : 'Unknown';
+        return [
+            'id' => 'p' . $profile->id,
+            'action' => 'New Profile Added',
+            'name' => $profile->full_name,
+            'time' => $time,
+            'status' => 'completed',
+            'created_at' => $profile->created_at
+        ];
+    });
+
+    $recentActivity = $recentClients->concat($recentProfiles)
+        ->sortByDesc('created_at')
+        ->take(4)
+        ->values();
+
+    return Inertia::render('Dashboard', [
+        'stats' => [
+            'totalClients' => $totalClients,
+            'activeProfiles' => $activeProfiles,
+            'openAssignments' => $openAssignments,
+            'monthlyRevenue' => '$' . number_format($monthlyRevenue, 2),
+        ],
+        'recentActivity' => $recentActivity
+    ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 // Public API routes for dropdowns

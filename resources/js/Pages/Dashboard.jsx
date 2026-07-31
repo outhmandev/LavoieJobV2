@@ -2,20 +2,13 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import { FiUsers, FiUserCheck, FiBriefcase, FiTrendingUp, FiArrowUpRight, FiMoreVertical } from 'react-icons/fi';
 
-export default function Dashboard() {
-    // Mock Data for Dashboard Visualization
-    const stats = [
-        { title: 'Total Clients', value: '1,248', change: '+12%', icon: <FiUsers />, color: 'bg-blue-500' },
-        { title: 'Active Profiles', value: '842', change: '+5%', icon: <FiUserCheck />, color: 'bg-emerald-500' },
-        { title: 'Open Assignments', value: '156', change: '-2%', icon: <FiBriefcase />, color: 'bg-indigo-500' },
-        { title: 'Monthly Revenue', value: '$45,231', change: '+18%', icon: <FiTrendingUp />, color: 'bg-purple-500' },
-    ];
-
-    const recentActivity = [
-        { id: 1, action: 'New Client Registered', name: 'Sarah Jenkins', time: '2 mins ago', status: 'completed' },
-        { id: 2, action: 'Profile Matched', name: 'Michael Chen to Tech Corp', time: '1 hour ago', status: 'processing' },
-        { id: 3, action: 'Contract Signed', name: 'Emma Davis', time: '3 hours ago', status: 'completed' },
-        { id: 4, action: 'Assignment Created', name: 'Robert Wilson to Logistics LLC', time: '5 hours ago', status: 'pending' },
+export default function Dashboard({ stats, recentActivity }) {
+    // Data for Dashboard Visualization from backend
+    const dashboardStats = [
+        { title: 'Total Clients', value: stats?.totalClients || 0, change: '+0%', icon: <FiUsers />, color: 'bg-blue-500' },
+        { title: 'Active Profiles', value: stats?.activeProfiles || 0, change: '+0%', icon: <FiUserCheck />, color: 'bg-emerald-500' },
+        { title: 'Open Assignments', value: stats?.openAssignments || 0, change: '+0%', icon: <FiBriefcase />, color: 'bg-indigo-500' },
+        { title: 'Monthly Revenue', value: stats?.monthlyRevenue || '$0.00', change: '+0%', icon: <FiTrendingUp />, color: 'bg-purple-500' },
     ];
 
     return (
@@ -32,7 +25,7 @@ export default function Dashboard() {
             <div className="space-y-6">
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {stats.map((stat, index) => (
+                    {dashboardStats.map((stat, index) => (
                         <div key={index} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-gray-800/80 hover:shadow-lg transition-shadow duration-300">
                             <div className="flex justify-between items-start">
                                 <div>

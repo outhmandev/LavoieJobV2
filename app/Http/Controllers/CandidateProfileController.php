@@ -13,7 +13,7 @@ class CandidateProfileController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $query = Profile::with('project')->latest();
+        $query = Profile::with('project')->orderByDesc('id');
         
         // Scope to projects the user is assigned to if they are not super admin
         if (!$user->hasRole(['System Administrator', 'Super Admin', 'Admin'])) {

@@ -28,10 +28,11 @@ class ProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'matricule' => 'nullable|string|max:255',
             'full_name' => 'required|string|max:255',
             'project_id' => 'required|exists:projects,id',
             'avatar' => 'nullable|string|max:255',
-            'status' => 'nullable|string|max:255',
+            'p_statut' => 'nullable|string|max:255',
             'cin' => 'nullable|string|max:255',
             'cin_validity' => 'nullable|date',
             'birth_date' => 'nullable|date',
@@ -49,8 +50,8 @@ class ProfileRequest extends FormRequest
             'current_city' => 'nullable|string|max:255',
             'education_specialty' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
-            'phone_1' => 'nullable|string|max:255',
-            'phone_2' => 'nullable|string|max:255',
+            'gsm_1' => 'nullable|string|max:255',
+            'gsm_2' => 'nullable|string|max:255',
             'source' => 'nullable|string|max:255',
             'job' => 'nullable|string|max:255',
             'min_price' => 'nullable|numeric|min:0',

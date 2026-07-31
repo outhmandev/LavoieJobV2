@@ -25,6 +25,7 @@ export default function Edit({ profile, projects = [] }) {
     const criteria = profile.criteria || {};
 
     const { data, setData, put, processing, errors } = useForm({
+        matricule: profile.matricule || '',
         full_name: profile.full_name || '', 
         cin: profile.cin || '', 
         cin_validity: profile.cin_validity || '', 
@@ -490,9 +491,15 @@ export default function Edit({ profile, projects = [] }) {
                                                 </div>
                                             </div>
 
-                                            <div className="space-y-2">
-                                                <InputLabel value="Nom et prénom *" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.full_name} onChange={e => setData('full_name', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" required />
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <InputLabel value="Matricule / Référence" className="text-gray-600 dark:text-gray-400 font-bold" />
+                                                    <TextInput value={data.matricule} onChange={e => setData('matricule', e.target.value)} className="w-full bg-indigo-50/50 border-indigo-200 dark:border-indigo-800 dark:bg-indigo-900/10 rounded-xl" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <InputLabel value="Nom et prénom *" className="text-gray-600 dark:text-gray-400" />
+                                                    <TextInput value={data.full_name} onChange={e => setData('full_name', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" required />
+                                                </div>
                                             </div>
 
                                             <div className="space-y-2">

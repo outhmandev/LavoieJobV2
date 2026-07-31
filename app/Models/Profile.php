@@ -11,6 +11,7 @@ class Profile extends Model implements Auditable
     use HasFactory;
     use \OwenIt\Auditing\Auditable;
 
+    public $timestamps = false;
     protected $guarded = ['id'];
 
     public function project()
