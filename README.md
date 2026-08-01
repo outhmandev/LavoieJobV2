@@ -14,13 +14,6 @@ A modern, full-stack HR and job management platform designed to streamline recru
 - Advanced search and filtering
 - User authentication and role management
 
-## Getting Started
-1. Clone the repository
-2. Install dependencies (npm/composer)
-3. Configure environment variables
-4. Run migrations
-5. Start development server
-
 ## License
 MIT License
 
