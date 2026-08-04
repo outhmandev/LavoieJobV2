@@ -462,6 +462,7 @@ class ContractGenerator
         $colW = $this->contentW / 2;
 
         foreach ($rows as $i => [$label, $value]) {
+            $value = (string) ($value ?? '-');
             $bg = ($i % 2 === 0) ? self::SECTION_BG : self::WHITE;
             $y  = $pdf->GetY();
 

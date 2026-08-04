@@ -20,8 +20,8 @@ class AssignmentController extends Controller
 
     public function create()
     {
-        $clients = Client::orderBy('c_nom')->get();
-        $profiles = Profile::orderBy('full_name')->get();
+        $clients = Client::orderBy('nom')->get(['id', 'nom']);
+        $profiles = Profile::orderBy('full_name')->get(['id', 'full_name', 'job']);
         return Inertia::render('Assignments/Create', [
             'clients' => $clients,
             'profiles' => $profiles
@@ -44,8 +44,9 @@ class AssignmentController extends Controller
 
     public function edit(Assignment $assignment)
     {
-        $clients = Client::orderBy('c_nom')->get();
-        $profiles = Profile::orderBy('full_name')->get();
+        $assignment->load(['client', 'profile']);
+        $clients = Client::orderBy('nom')->get(['id', 'nom']);
+        $profiles = Profile::orderBy('full_name')->get(['id', 'full_name', 'job']);
         return Inertia::render('Assignments/Edit', [
             'assignment' => $assignment,
             'clients' => $clients,

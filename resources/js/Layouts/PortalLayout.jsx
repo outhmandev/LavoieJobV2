@@ -1,3 +1,4 @@
+import NotificationDropdown from '@/Components/NotificationDropdown';
 import { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 
@@ -79,6 +80,7 @@ export default function PortalLayout({ user, header, children }) {
                     </button>
 
                     <div className="flex-1 flex justify-end items-center gap-4">
+                        <NotificationDropdown />
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
                                 {user.name.charAt(0)}

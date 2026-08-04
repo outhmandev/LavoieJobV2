@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { FiPlus, FiEdit2, FiTrash2, FiMoreVertical, FiBriefcase } from 'react-icons/fi';
 import Dropdown from '@/Components/Dropdown';
 
@@ -9,7 +9,7 @@ export default function Index({ assignments }) {
             header={
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Active Assignments</h2>
+                        <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Active Contrats</h2>
                         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Track and manage candidate placements for your clients.</p>
                     </div>
                     <div className="mt-4 md:mt-0">
@@ -42,15 +42,11 @@ export default function Index({ assignments }) {
                                             <div className="w-6 h-6 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">
                                                 {assignment.profile?.full_name?.charAt(0) || '?'}
                                             </div>
-                                            <span className="font-medium text-indigo-600 dark:text-indigo-400">{assignment.profile?.full_name || 'N/A'}</span>
+                                            <span className="font-medium text-indigo-600 dark:text-indigo-400">{assignment.profile?.nom || 'N/A'}</span>
                                         </div>
                                     </td>
                                     <td className="py-4 px-6 text-sm">
-                                        <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${
-                                            assignment.status === 'completed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 
-                                            assignment.status === 'cancelled' ? 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400' :
-                                            'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
-                                        }`}>
+                                        <span className="text-gray-700 dark:text-gray-300 font-medium">
                                             {assignment.status || 'active'}
                                         </span>
                                     </td>
@@ -66,14 +62,27 @@ export default function Index({ assignments }) {
                                             </Dropdown.Trigger>
                                             <Dropdown.Content align="right" width="48">
                                                 <Dropdown.Link href={route('assignments.edit', assignment.id)} className="flex items-center gap-2">
-                                                    <FiEdit2 className="text-gray-400" /> View Contract
+                                                    <FiEdit2 className="text-gray-400" /> Modifier / Voir
                                                 </Dropdown.Link>
-                                                <Dropdown.Link as="a" target="_blank" href={route('assignments.contract', assignment.id)} className="flex items-center gap-2 text-indigo-600 hover:bg-indigo-50">
-                                                    <FiBriefcase className="text-indigo-500" /> Print Contract
-                                                </Dropdown.Link>
-                                                <Dropdown.Link href="#" as="button" className="flex items-center gap-2 text-rose-600 hover:bg-rose-50">
-                                                    <FiTrash2 className="text-rose-500" /> Delete
-                                                </Dropdown.Link>
+                                                <a
+                                                    href={route('assignments.contract', assignment.id)}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="block w-full px-4 py-2 text-start text-sm leading-5 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 flex items-center gap-2 transition duration-150 ease-in-out"
+                                                >
+                                                    <FiBriefcase className="text-indigo-500" /> Imprimer le contrat
+                                                </a>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (confirm('Êtes-vous sûr de vouloir supprimer cette affectation / contrat ?')) {
+                                                            router.delete(route('assignments.destroy', assignment.id));
+                                                        }
+                                                    }}
+                                                    className="block w-full px-4 py-2 text-start text-sm leading-5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 transition duration-150 ease-in-out"
+                                                >
+                                                    <FiTrash2 className="text-rose-500" /> Supprimer
+                                                </button>
                                             </Dropdown.Content>
                                         </Dropdown>
                                     </td>

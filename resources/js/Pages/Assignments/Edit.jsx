@@ -3,9 +3,9 @@ import { Head, useForm, Link } from '@inertiajs/react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
-import { FiArrowLeft, FiSave } from 'react-icons/fi';
+import { FiArrowLeft, FiSave, FiFileText } from 'react-icons/fi';
 
-export default function Edit({ assignment, clients, profiles }) {
+export default function Edit({ assignment, clients = [], profiles = [] }) {
     const { data, setData, put, processing, errors } = useForm({
         client_id: assignment.client_id || '',
         profile_id: assignment.profile_id || '',
@@ -14,8 +14,8 @@ export default function Edit({ assignment, clients, profiles }) {
         payment_schedule: assignment.payment_schedule || '',
         rest_days: assignment.rest_days || '',
         employment_type: assignment.employment_type || '',
-        start_date: assignment.start_date || '',
-        end_date: assignment.end_date || '',
+        start_date: assignment.start_date ? String(assignment.start_date).split('T')[0] : '',
+        end_date: assignment.end_date ? String(assignment.end_date).split('T')[0] : '',
         notes: assignment.notes || '',
     });
 
@@ -27,24 +27,36 @@ export default function Edit({ assignment, clients, profiles }) {
     return (
         <AuthenticatedLayout 
             header={
-                <div className="flex items-center gap-4">
-                    <Link href={route('assignments.index')} className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-gray-700 transition-colors">
-                        <FiArrowLeft size={20} />
-                    </Link>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-4">
+                    <div className="flex items-center gap-4">
+                        <Link href={route('assignments.index')} className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-gray-700 transition-colors">
+                            <FiArrowLeft size={20} />
+                        </Link>
+                        <div>
+                            <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Modifier le Contrat / Affectation #{assignment.id}</h2>
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Détails de l'affectation et du contrat client-candidat.</p>
+                        </div>
+                    </div>
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Edit Assignment</h2>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Update the details for this match.</p>
+                        <a
+                            href={route('assignments.contract', assignment.id)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 rounded-xl font-semibold text-sm transition-colors border border-indigo-200 dark:border-indigo-800"
+                        >
+                            <FiFileText size={16} /> Imprimer le Contrat PDF
+                        </a>
                     </div>
                 </div>
             }
         >
-            <Head title="Edit Assignment" />
+            <Head title={`Contrat #${assignment.id}`} />
 
             <div className="max-w-4xl mx-auto pb-12">
                 <form onSubmit={submit} className="bg-white dark:bg-gray-800 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-gray-800/80 overflow-hidden">
                     <div className="p-8 space-y-8">
                         <div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-2 mb-6">Assignment Details</h3>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-2 mb-6">Détails de l'Affectation</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
@@ -59,7 +71,7 @@ export default function Edit({ assignment, clients, profiles }) {
                                         >
                                             <option value="">-- choisissez --</option>
                                             {clients.map(c => (
-                                                <option key={c.id} value={c.id}>{c.c_nom}</option>
+                                                <option key={c.id} value={c.id}>{c.c_nom || c.nom}</option>
                                             ))}
                                         </select>
                                         <InputError message={errors.client_id} className="mt-2" />
@@ -76,7 +88,7 @@ export default function Edit({ assignment, clients, profiles }) {
                                         >
                                             <option value="">-- choisissez --</option>
                                             {profiles.map(p => (
-                                                <option key={p.id} value={p.id}>{p.full_name} ({p.job})</option>
+                                                <option key={p.id} value={p.id}>{p.full_name} {p.fonction || p.job ? `(${p.fonction || p.job})` : ''}</option>
                                             ))}
                                         </select>
                                         <InputError message={errors.profile_id} className="mt-2" />

@@ -14,6 +14,7 @@ class UpdateDB extends Command
      * @var string
      */
     protected $signature = 'app:update-db';
+       // protected $key = '1234';
 
     /**
      * The console command description.
@@ -34,18 +35,15 @@ class UpdateDB extends Command
     $start = microtime(true);
 
     $endpoint = 'https://lavoiejob.ma/api/fetch';
-
+    
     try {
 
         $this->line('🌐 Fetching remote API...');
 
         $response = Http::timeout(30)->get($endpoint);
-
-        if (! $response->successful()) {
-            $this->components->error('❌ Failed to fetch API.');
-
-            return self::FAILURE;
-        }
+        // key to not let everyone join 
+        // key is LJK926
+        
 
         $data = $response->json();
 

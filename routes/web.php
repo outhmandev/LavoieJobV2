@@ -77,9 +77,69 @@ Route::get('/dashboard', function (Illuminate\Http\Request $request) {
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// Public API routes for dropdowns
 Route::middleware('auth')->group(function () {
     Route::get('/api/projects', [ApiProjectController::class, 'index'])->name('api.projects.index');
+    
+    // CIN Verification Route
+    Route::get('/api/check-cin', function (Illuminate\Http\Request $request) {
+        $cin = trim((string) $request->query('cin', ''));
+        $type = $request->query('type', 'all');
+        $excludeId = $request->query('exclude_id');
+
+        if (empty($cin)) {
+            return response()->json([
+                'exists' => false,
+                'message' => 'Veuillez saisir un numéro de CIN'
+            ]);
+        }
+
+        $profileMatch = null;
+        $clientMatch = null;
+
+        if ($type === 'profile' || $type === 'all') {
+            $pq = \App\Models\Profile::where('cin', $cin);
+            if ($excludeId && $type === 'profile') {
+                $pq->where('id', '!=', $excludeId);
+            }
+            $profileMatch = $pq->first(['id', 'full_name', 'cin', 'status', 'current_city']);
+        }
+
+        if ($type === 'client' || $type === 'all') {
+            $cq = \App\Models\Client::where('cin', $cin);
+            if ($excludeId && $type === 'client') {
+                $cq->where('id', '!=', $excludeId);
+            }
+            $clientMatch = $cq->first(['id', 'nom', 'cin', 'statut']);
+        }
+
+        $exists = !is_null($profileMatch) || !is_null($clientMatch);
+
+        return response()->json([
+            'exists' => $exists,
+            'cin' => $cin,
+            'profile' => $profileMatch ? [
+                'id' => $profileMatch->id,
+                'name' => $profileMatch->full_name,
+                'status' => $profileMatch->status,
+                'city' => $profileMatch->current_city,
+                'type' => 'Profil / Candidat',
+                'url' => route('profiles.edit', $profileMatch->id),
+            ] : null,
+            'client' => $clientMatch ? [
+                'id' => $clientMatch->id,
+                'name' => $clientMatch->nom,
+                'status' => $clientMatch->statut,
+                'type' => 'Client',
+                'url' => route('clients.edit', $clientMatch->id),
+            ] : null,
+        ]);
+    })->name('api.check-cin');
+
+    // Notification Routes
+    Route::get('/api/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/api/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/api/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+    Route::post('/api/notifications/test', [\App\Http\Controllers\NotificationController::class, 'sendTest'])->name('notifications.test');
 });
 
 Route::middleware('auth')->group(function () {

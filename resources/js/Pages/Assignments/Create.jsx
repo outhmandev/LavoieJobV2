@@ -29,14 +29,14 @@ export default function Create({ clients, profiles }) {
     };
 
     return (
-        <AuthenticatedLayout 
+        <AuthenticatedLayout
             header={
                 <div className="flex items-center gap-4">
                     <Link href={route('assignments.index')} className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-gray-700 transition-colors">
                         <FiArrowLeft size={20} />
                     </Link>
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Create New Assignment</h2>
+                        <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Create New Contrat</h2>
                         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Match a candidate profile with a client's project.</p>
                     </div>
                 </div>
@@ -48,7 +48,7 @@ export default function Create({ clients, profiles }) {
                 <form onSubmit={submit} className="bg-white dark:bg-gray-800 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-gray-800/80 overflow-hidden">
                     <div className="p-8 space-y-8">
                         <div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-2 mb-6">Assignment Details</h3>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-2 mb-6">Contrat Details</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
@@ -63,7 +63,7 @@ export default function Create({ clients, profiles }) {
                                         >
                                             <option value="">-- choisissez --</option>
                                             {clients.map(c => (
-                                                <option key={c.id} value={c.id}>{c.c_nom}</option>
+                                                <option key={c.id} value={c.id}>{c.c_nom || c.nom}</option>
                                             ))}
                                         </select>
                                         <InputError message={errors.client_id} className="mt-2" />
@@ -80,7 +80,7 @@ export default function Create({ clients, profiles }) {
                                         >
                                             <option value="">-- choisissez --</option>
                                             {profiles.map(p => (
-                                                <option key={p.id} value={p.id}>{p.full_name} ({p.job})</option>
+                                                <option key={p.id} value={p.id}>{p.full_name} {p.fonction || p.job ? `(${p.fonction || p.job})` : ''}</option>
                                             ))}
                                         </select>
                                         <InputError message={errors.profile_id} className="mt-2" />
@@ -214,17 +214,17 @@ export default function Create({ clients, profiles }) {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="bg-gray-50 dark:bg-gray-800/50 px-8 py-5 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end gap-4">
                         <Link href={route('assignments.index')} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
                             Cancel
                         </Link>
-                        <button 
+                        <button
                             disabled={processing}
                             className="inline-flex items-center gap-2 bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-indigo-700 hover:shadow-md transition-all duration-200 disabled:opacity-75"
                         >
                             <FiSave size={18} />
-                            Save Assignment
+                            Save Contrat
                         </button>
                     </div>
                 </form>

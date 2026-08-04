@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { FiPlus, FiEdit2, FiTrash2, FiMoreVertical, FiUsers, FiSearch, FiFilter, FiX } from 'react-icons/fi';
 import Dropdown from '@/Components/Dropdown';
+import { getClientStatusBadgeClass } from '@/constants';
 
 export default function Index({ clients, filters, options }) {
     const [filterValues, setFilterValues] = useState({
@@ -198,8 +199,8 @@ export default function Index({ clients, filters, options }) {
                                     <td className="py-4 px-6 text-sm font-mono text-gray-600 dark:text-gray-300">{client?.c_mat || <span className="text-gray-300">-</span>}</td>
                                     <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">{client.project?.name || <span className="text-gray-300">-</span>}</td>
                                     <td className="py-4 px-6 text-sm">
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                            {client?.c_statut || 'N/A'}
+                                        <span className="text-gray-700 dark:text-gray-300 font-medium">
+                                            {client?.c_statut || client?.statut || client?.status || 'N/A'}
                                         </span>
                                     </td>
                                     <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">{client?.c_ville_a || <span className="text-gray-300">-</span>}</td>

@@ -41,15 +41,15 @@ class ClientCriteriaController extends Controller
 
         $validated = $request->validate([
             'project_id' => 'nullable|exists:projects,id',
-            'c_fonction' => 'nullable|string|max:255',
-            'c_prix_max' => 'nullable|numeric|min:0',
-            'c_ville_a' => 'nullable|string|max:255',
-            'c_presence_animaux' => 'nullable|string|in:Oui,Non',
-            'c_p_nationalite' => 'nullable|string|max:255',
-            'c_p_religion' => 'nullable|string|max:255',
-            'c_mode' => 'nullable|string|max:255', // Type de contrat
-            'c_logement' => 'nullable|string|max:255', // Hébergement
-            'c_observation' => 'nullable|string', // Includes start date/remarks
+            'fonction' => 'nullable|string|max:255',
+            'prix_max' => 'nullable|numeric|min:0',
+            'ville_a' => 'nullable|string|max:255',
+            'presence_animaux' => 'nullable|string|in:Oui,Non',
+            'nationalite' => 'nullable|string|max:255',
+            'religion' => 'nullable|string|max:255',
+            'mode' => 'nullable|string|max:255', // Type de contrat
+            'logement' => 'nullable|string|max:255', // Hébergement
+            'observation' => 'nullable|string', // Includes start date/remarks
         ]);
 
         $client->update($validated);

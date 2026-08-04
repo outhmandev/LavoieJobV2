@@ -3,13 +3,18 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, Link } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
+import CinCheckInput from '@/Components/CinCheckInput';
+import LanguageSelector from '@/Components/LanguageSelector';
+import ReligionSelector from '@/Components/ReligionSelector';
+import PetAllergiesSelector from '@/Components/PetAllergiesSelector';
 import { FiArrowLeft, FiSave, FiCheckCircle, FiChevronRight, FiChevronLeft, FiUser, FiMapPin, FiBriefcase, FiStar } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { PROFILE_STATUSES, RECRUITMENT_SOURCES, SPOKEN_LANGUAGES, RELIGIONS, EDUCATION_LEVELS, EDUCATION_SPECIALTIES, SALARY_PERIODS } from '@/constants';
 
 function cn(...inputs) {
-  return twMerge(clsx(inputs));
+    return twMerge(clsx(inputs));
 }
 
 const steps = [
@@ -19,16 +24,49 @@ const steps = [
     { id: 4, name: 'Compétences', icon: FiStar },
 ];
 
-export default function Create({ projects = [] }) {
+export default function Create({ projects = [], statuses = PROFILE_STATUSES }) {
+    const availableStatuses = Array.from(new Set([...(statuses || []), ...PROFILE_STATUSES]));
+
     const { data, setData, post, processing, errors } = useForm({
-        matricule: '', full_name: '', cin: '', cin_validity: '', birth_date: '', birth_city: '', 
-        nationality: 'Maroc', religion: '', education_level: '', education_specialty: '', 
-        marital_status: '', children_count: '', cin_address: '', origin_city: '', 
-        current_address: '', current_city: '', email: '', phone_1: '', phone_2: '', 
-        source: '', rate: 0, status: 'active', project_id: '', 
-        job: '', min_price: '', max_price: '', experience_years: '', experience_details: '',
-        mobility: 'Oui', languages: '', has_diseases: 'Non', pet_allergies: 'Non', observation: '',
-        mode_emploi: '', type_contrat: '', repos: '', missions: []
+        matricule: '',
+        full_name: '',
+        cin: '',
+        cin_validity: '',
+        birth_date: '',
+        birth_city: '',
+        nationality: 'Maroc',
+        religion: '',
+        education_level: '',
+        education_specialty: '',
+        marital_status: '',
+        children_count: '',
+        cin_address: '',
+        origin_city: '',
+        current_address: '',
+        current_city: '',
+        email: '',
+        phone_1: '',
+        phone_2: '',
+        source: '',
+        rate: 0,
+        status: 'Disponible',
+        project_id: '',
+        job: '',
+        min_price: '',
+        max_price: '',
+        salary_period: 'Mensuel',
+        experience_years: '',
+        experience_details: '',
+        mobility: 'Oui',
+        languages: '',
+        has_diseases: 'Non',
+        pet_allergies: 'Non',
+        allergy_details: '',
+        observation: '',
+        mode_emploi: '',
+        type_contrat: '',
+        repos: '',
+        missions: []
     });
 
     const [currentStep, setCurrentStep] = useState(1);
@@ -36,10 +74,14 @@ export default function Create({ projects = [] }) {
 
     const handleProjectChange = (e) => {
         const pId = e.target.value;
-        setData('project_id', pId);
-        const proj = projects.find(p => p.id == pId);
+        const proj = projects.find(p => String(p.id) === String(pId)) || null;
         setSelectedProject(proj);
-        setData(prev => ({ ...prev, project_id: pId, job: '', missions: [] }));
+        setData(prevData => ({
+            ...prevData,
+            project_id: pId,
+            job: '',
+            missions: []
+        }));
     };
 
     const handleMissionToggle = (missionName) => {
@@ -70,7 +112,7 @@ export default function Create({ projects = [] }) {
     };
 
     return (
-        <AuthenticatedLayout 
+        <AuthenticatedLayout
             header={
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -92,12 +134,12 @@ export default function Create({ projects = [] }) {
             <Head title="Créer un Profil" />
 
             <div className="max-w-6xl mx-auto pb-20 pt-8">
-                
+
                 {/* Stepper Header */}
                 <div className="mb-10 relative">
                     <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-full -z-10 transform -translate-y-1/2"></div>
-                    <div 
-                        className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-700 ease-out -z-10 transform -translate-y-1/2" 
+                    <div
+                        className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-700 ease-out -z-10 transform -translate-y-1/2"
                         style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
                     ></div>
 
@@ -109,24 +151,24 @@ export default function Create({ projects = [] }) {
 
                             return (
                                 <div key={step.id} className="flex flex-col items-center" onClick={() => navigateStep(step.id)}>
-                                    <motion.button 
+                                    <motion.button
                                         type="button"
                                         whileHover={{ scale: 1.1 }}
                                         whileTap={{ scale: 0.95 }}
                                         className={cn(
                                             "w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 border-2",
-                                            isCompleted ? "bg-emerald-600 border-emerald-600 text-white" : 
-                                            isCurrent ? "bg-white dark:bg-gray-900 border-emerald-500 text-emerald-500 shadow-emerald-500/30" : 
-                                            "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400"
+                                            isCompleted ? "bg-emerald-600 border-emerald-600 text-white" :
+                                                isCurrent ? "bg-white dark:bg-gray-900 border-emerald-500 text-emerald-500 shadow-emerald-500/30" :
+                                                    "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400"
                                         )}
                                     >
                                         <Icon size={20} strokeWidth={isCurrent || isCompleted ? 2.5 : 2} />
                                     </motion.button>
                                     <span className={cn(
                                         "mt-3 text-xs md:text-sm font-bold transition-colors",
-                                        isCurrent ? "text-emerald-600 dark:text-emerald-400" : 
-                                        isCompleted ? "text-gray-900 dark:text-gray-200" : 
-                                        "text-gray-400 dark:text-gray-500"
+                                        isCurrent ? "text-emerald-600 dark:text-emerald-400" :
+                                            isCompleted ? "text-gray-900 dark:text-gray-200" :
+                                                "text-gray-400 dark:text-gray-500"
                                     )}>
                                         {step.name}
                                     </span>
@@ -138,19 +180,19 @@ export default function Create({ projects = [] }) {
 
                 {/* Form Container */}
                 <div className="relative bg-white dark:bg-gray-900  border border-white/20 dark:border-gray-800/50 shadow-xl rounded-[2rem] overflow-hidden">
-                    
-                    
+
+
                     <form onSubmit={submit} className="relative z-10">
-                    {Object.keys(errors).length > 0 && (
-                        <div className="mx-8 mt-8 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl">
-                            <p className="text-red-600 dark:text-red-400 font-bold mb-1">Attention, le formulaire contient des erreurs :</p>
-                            <ul className="list-disc list-inside text-sm text-red-500 dark:text-red-400/80">
-                                {Object.values(errors).map((err, idx) => (
-                                    <li key={idx}>{err}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
+                        {Object.keys(errors).length > 0 && (
+                            <div className="mx-8 mt-8 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl">
+                                <p className="text-red-600 dark:text-red-400 font-bold mb-1">Attention, le formulaire contient des erreurs :</p>
+                                <ul className="list-disc list-inside text-sm text-red-500 dark:text-red-400/80">
+                                    {Object.values(errors).map((err, idx) => (
+                                        <li key={idx}>{err}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
 
                         <div className="min-h-[400px] p-8 md:p-12 overflow-hidden">
                             <AnimatePresence initial={false} custom={direction} mode="wait">
@@ -183,23 +225,17 @@ export default function Create({ projects = [] }) {
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <InputLabel value="Matricule / Référence" className="text-gray-600 dark:text-gray-400 font-bold" />
-                                                    <TextInput value={data.matricule} onChange={e => setData('matricule', e.target.value)} className="w-full bg-indigo-50/50 border-indigo-200 dark:border-indigo-800 dark:bg-indigo-900/10 rounded-xl" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <InputLabel value="Nom et prénom *" className="text-gray-600 dark:text-gray-400" />
-                                                    <TextInput value={data.full_name} onChange={e => setData('full_name', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" required />
-                                                </div>
+                                            <div className="space-y-2">
+                                                <InputLabel value="Nom et prénom *" className="text-gray-600 dark:text-gray-400" />
+                                                <TextInput value={data.full_name} onChange={e => setData('full_name', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl" required />
                                             </div>
 
                                             <div className="space-y-2">
                                                 <InputLabel value="Évaluation du profil" className="text-gray-600 dark:text-gray-400" />
                                                 <div className="flex gap-2">
-                                                    {[1,2,3,4,5].map(star => (
-                                                        <button 
-                                                            key={star} 
+                                                    {[1, 2, 3, 4, 5].map(star => (
+                                                        <button
+                                                            key={star}
                                                             type="button"
                                                             onClick={() => setData('rate', star)}
                                                             className={cn("text-2xl transition-all hover:scale-110", data.rate >= star ? "text-amber-400" : "text-gray-300 dark:text-gray-600")}
@@ -213,7 +249,7 @@ export default function Create({ projects = [] }) {
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <InputLabel value="CIN / Passeport" className="text-gray-600 dark:text-gray-400" />
-                                                    <TextInput value={data.cin} onChange={e => setData('cin', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl" />
+                                                    <CinCheckInput value={data.cin} onChange={e => setData('cin', e.target.value)} type="all" className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl" />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <InputLabel value="Validité CIN" className="text-gray-600 dark:text-gray-400" />
@@ -237,15 +273,10 @@ export default function Create({ projects = [] }) {
                                                     <InputLabel value="Nationalité" className="text-gray-600 dark:text-gray-400" />
                                                     <TextInput value={data.nationality} onChange={e => setData('nationality', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl" />
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <InputLabel value="Religion" className="text-gray-600 dark:text-gray-400" />
-                                                    <select value={data.religion} onChange={e => setData('religion', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300">
-                                                        <option value="">-- Sélectionnez --</option>
-                                                        <option value="Islam">Islam</option>
-                                                        <option value="Chrétienté">Chrétienté</option>
-                                                        <option value="Judaïsme">Judaïsme</option>
-                                                    </select>
-                                                </div>
+                                                <ReligionSelector
+                                                    value={data.religion}
+                                                    onChange={val => setData('religion', val)}
+                                                />
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-4">
@@ -336,18 +367,18 @@ export default function Create({ projects = [] }) {
                                                     <InputLabel value="Niveau d'étude" className="text-gray-600 dark:text-gray-400" />
                                                     <select value={data.education_level} onChange={e => setData('education_level', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300">
                                                         <option value="">-- Sélectionnez --</option>
-                                                        <option value="Bac">Bac</option>
-                                                        <option value="Bac+2">Bac+2</option>
-                                                        <option value="Bac+3">Bac+3</option>
-                                                        <option value="Bac+5">Bac+5</option>
+                                                        {EDUCATION_LEVELS.map(lvl => (
+                                                            <option key={lvl} value={lvl}>{lvl}</option>
+                                                        ))}
                                                     </select>
                                                 </div>
                                                 <div className="space-y-2">
                                                     <InputLabel value="Spécialité" className="text-gray-600 dark:text-gray-400" />
                                                     <select value={data.education_specialty} onChange={e => setData('education_specialty', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300">
                                                         <option value="">-- Sélectionnez --</option>
-                                                        <option value="Général">Général</option>
-                                                        <option value="Technique">Technique</option>
+                                                        {EDUCATION_SPECIALTIES.map(spec => (
+                                                            <option key={spec} value={spec}>{spec}</option>
+                                                        ))}
                                                     </select>
                                                 </div>
                                             </div>
@@ -375,9 +406,14 @@ export default function Create({ projects = [] }) {
                                                     </div>
                                                     <div className="space-y-2 col-span-2 md:col-span-1">
                                                         <InputLabel value="Période" className="text-gray-500 text-xs uppercase" />
-                                                        <select className="w-full bg-white dark:bg-gray-900 rounded-xl text-lg border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 h-[50px]">
-                                                            <option value="mois">Par mois</option>
-                                                            <option value="jour">Par jour</option>
+                                                        <select
+                                                            value={data.salary_period || 'Mensuel'}
+                                                            onChange={e => setData('salary_period', e.target.value)}
+                                                            className="w-full bg-white dark:bg-gray-900 rounded-xl text-lg border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 h-[50px]"
+                                                        >
+                                                            {SALARY_PERIODS.map(p => (
+                                                                <option key={p} value={p}>{p}</option>
+                                                            ))}
                                                         </select>
                                                     </div>
                                                 </div>
@@ -387,7 +423,7 @@ export default function Create({ projects = [] }) {
 
                                     {/* STEP 4: Compétences */}
                                     {currentStep === 4 && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                                             <div className="md:col-span-2 flex items-center gap-3 mb-2">
                                                 <div className="p-2 bg-amber-100 dark:bg-amber-500/20 rounded-lg text-amber-600 dark:text-amber-400"><FiStar size={20} /></div>
                                                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">Compétences & Spécificités</h3>
@@ -430,16 +466,11 @@ export default function Create({ projects = [] }) {
                                                 )}
                                             </div>
 
-                                            <div className="space-y-2">
-                                                <InputLabel value="Langues parlées" className="text-gray-600 dark:text-gray-400" />
-                                                <select value={data.languages} onChange={e => setData('languages', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300">
-                                                    <option value="">-- Sélectionnez --</option>
-                                                    <option value="Français">Français</option>
-                                                    <option value="Arabe">Arabe</option>
-                                                    <option value="Anglais">Anglais</option>
-                                                </select>
-                                            </div>
-                                            
+                                            <LanguageSelector
+                                                value={data.languages}
+                                                onChange={val => setData('languages', val)}
+                                            />
+
                                             <div className="space-y-2">
                                                 <InputLabel value="Mobilité du Candidat" className="text-gray-600 dark:text-gray-400" />
                                                 <div className="flex gap-4">
@@ -451,7 +482,7 @@ export default function Create({ projects = [] }) {
                                                 </div>
                                             </div>
 
-                                            <div className="p-5 bg-rose-50/50 dark:bg-rose-900/10 rounded-2xl border border-rose-200/50 dark:border-rose-800/30">
+                                            <div className="p-5 bg-rose-50/50 dark:bg-rose-900/10 rounded-2xl border border-rose-200/50 dark:border-rose-800/30 self-start">
                                                 <InputLabel value="Maladies chroniques ?" className="text-rose-900 dark:text-rose-400 mb-3" />
                                                 <div className="flex gap-4">
                                                     {['Oui', 'Non'].map(opt => (
@@ -460,29 +491,29 @@ export default function Create({ projects = [] }) {
                                                 </div>
                                             </div>
 
-                                            <div className="p-5 bg-orange-50/50 dark:bg-orange-900/10 rounded-2xl border border-orange-200/50 dark:border-orange-800/30">
-                                                <InputLabel value="Allergies aux animaux ?" className="text-orange-900 dark:text-orange-400 mb-3" />
-                                                <div className="flex gap-4">
-                                                    {['Oui', 'Non'].map(opt => (
-                                                        <div key={opt} onClick={() => setData('pet_allergies', opt)} className={cn("flex-1 text-center py-2 rounded-xl border-2 cursor-pointer font-semibold", data.pet_allergies === opt ? "border-orange-500 bg-orange-500/10 text-orange-600 dark:text-orange-400" : "border-gray-200 dark:border-gray-700 text-gray-500 bg-white dark:bg-gray-800")}>{opt}</div>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                            <PetAllergiesSelector
+                                                isAllergic={data.pet_allergies}
+                                                onIsAllergicChange={opt => setData('pet_allergies', opt)}
+                                                details={data.allergy_details}
+                                                onDetailsChange={val => setData('allergy_details', val)}
+                                            />
 
                                             <div className="grid grid-cols-2 gap-4 md:col-span-2">
                                                 <div className="space-y-2">
                                                     <InputLabel value="Statut" className="text-gray-600 dark:text-gray-400" />
                                                     <select value={data.status} onChange={e => setData('status', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300">
-                                                        <option value="active">Actif</option>
-                                                        <option value="inactive">Inactif</option>
+                                                        {availableStatuses.map(st => (
+                                                            <option key={st} value={st}>{st}</option>
+                                                        ))}
                                                     </select>
                                                 </div>
                                                 <div className="space-y-2">
                                                     <InputLabel value="Source de recrutement" className="text-gray-600 dark:text-gray-400" />
                                                     <select value={data.source} onChange={e => setData('source', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300">
                                                         <option value="">-- Sélectionnez --</option>
-                                                        <option value="Facebook">Facebook</option>
-                                                        <option value="Recommendation">Recommendation</option>
+                                                        {RECRUITMENT_SOURCES.map(src => (
+                                                            <option key={src} value={src}>{src}</option>
+                                                        ))}
                                                     </select>
                                                 </div>
                                             </div>
@@ -499,9 +530,9 @@ export default function Create({ projects = [] }) {
 
                         {/* Bottom Navigation */}
                         <div className="border-t border-gray-100/20 dark:border-gray-800/50 bg-gray-50 dark:bg-gray-900  p-6 flex items-center justify-between">
-                            <button 
-                                type="button" 
-                                onClick={() => navigateStep(currentStep - 1)} 
+                            <button
+                                type="button"
+                                onClick={() => navigateStep(currentStep - 1)}
                                 className={cn(
                                     "flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all",
                                     currentStep === 1 ? "opacity-0 pointer-events-none" : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-700"
@@ -511,16 +542,16 @@ export default function Create({ projects = [] }) {
                             </button>
 
                             {currentStep < steps.length ? (
-                                <button 
-                                    type="button" 
-                                    onClick={() => navigateStep(currentStep + 1)} 
+                                <button
+                                    type="button"
+                                    onClick={() => navigateStep(currentStep + 1)}
                                     className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-emerald-500/30 transition-all hover:scale-105"
                                 >
                                     Suivant <FiChevronRight size={20} />
                                 </button>
                             ) : (
-                                <button 
-                                    type="submit" 
+                                <button
+                                    type="submit"
                                     disabled={processing}
                                     className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-amber-500/30 transition-all hover:scale-105 disabled:opacity-75 disabled:hover:scale-100"
                                 >

@@ -3,13 +3,15 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, Link } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
+import CinCheckInput from '@/Components/CinCheckInput';
 import { FiArrowLeft, FiSave, FiCheckCircle, FiChevronRight, FiChevronLeft, FiUser, FiMapPin, FiBriefcase, FiHeart } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { CLIENT_STATUSES, RECRUITMENT_SOURCES } from '@/constants';
 
 function cn(...inputs) {
-  return twMerge(clsx(inputs));
+    return twMerge(clsx(inputs));
 }
 
 const steps = [
@@ -19,12 +21,14 @@ const steps = [
     { id: 4, name: 'Médical', icon: FiHeart },
 ];
 
-export default function Create({ projects = [] }) {
+export default function Create({ projects = [], statuses = CLIENT_STATUSES }) {
+    const availableStatuses = Array.from(new Set([...(statuses || []), ...CLIENT_STATUSES]));
+
     const { data, setData, post, processing, errors } = useForm({
-        c_nom: '', project_id: '', c_fonction: '', status: 'active',
+        c_nom: '', project_id: '', c_fonction: '', statut: 'Prospect', c_statut: 'Prospect', status: 'Prospect',
         c_cin: '', c_cin_v: '', c_date_naissance: '', c_nationalite: 'Maroc', c_situation_fam: '',
         c_gsm1: '', c_gsm2: '', c_ville_o: '', c_ville_a: '', c_adresse_cin: '', c_adresse_act: '',
-        c_logement: '', c_n_enfant: 0, c_enfants_details: '', 
+        c_logement: '', c_n_enfant: 0, c_enfants_details: '',
         c_presence_animaux: 'Non', c_nombre_animaux: 0, c_animaux_details: '',
         mobility: 'Oui', allergies: '', treatment: '', attending_physician: '',
         c_source: '', c_prix_min: '', c_prix_max: '', c_observation: '',
@@ -76,7 +80,7 @@ export default function Create({ projects = [] }) {
     };
 
     return (
-        <AuthenticatedLayout 
+        <AuthenticatedLayout
             header={
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -98,12 +102,12 @@ export default function Create({ projects = [] }) {
             <Head title="Créer un Client" />
 
             <div className="max-w-6xl mx-auto pb-20 pt-8">
-                
+
                 {/* Stepper Header */}
                 <div className="mb-10 relative">
                     <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-full -z-10 transform -translate-y-1/2"></div>
-                    <div 
-                        className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out -z-10 transform -translate-y-1/2" 
+                    <div
+                        className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out -z-10 transform -translate-y-1/2"
                         style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
                     ></div>
 
@@ -115,24 +119,24 @@ export default function Create({ projects = [] }) {
 
                             return (
                                 <div key={step.id} className="flex flex-col items-center" onClick={() => navigateStep(step.id)}>
-                                    <motion.button 
+                                    <motion.button
                                         type="button"
                                         whileHover={{ scale: 1.1 }}
                                         whileTap={{ scale: 0.95 }}
                                         className={cn(
                                             "w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 border-2",
-                                            isCompleted ? "bg-indigo-600 border-indigo-600 text-white" : 
-                                            isCurrent ? "bg-white dark:bg-gray-900 border-indigo-500 text-indigo-500 shadow-indigo-500/30" : 
-                                            "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400"
+                                            isCompleted ? "bg-indigo-600 border-indigo-600 text-white" :
+                                                isCurrent ? "bg-white dark:bg-gray-900 border-indigo-500 text-indigo-500 shadow-indigo-500/30" :
+                                                    "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400"
                                         )}
                                     >
                                         <Icon size={20} strokeWidth={isCurrent || isCompleted ? 2.5 : 2} />
                                     </motion.button>
                                     <span className={cn(
                                         "mt-3 text-xs md:text-sm font-bold transition-colors",
-                                        isCurrent ? "text-indigo-600 dark:text-indigo-400" : 
-                                        isCompleted ? "text-gray-900 dark:text-gray-200" : 
-                                        "text-gray-400 dark:text-gray-500"
+                                        isCurrent ? "text-indigo-600 dark:text-indigo-400" :
+                                            isCompleted ? "text-gray-900 dark:text-gray-200" :
+                                                "text-gray-400 dark:text-gray-500"
                                     )}>
                                         {step.name}
                                     </span>
@@ -144,19 +148,19 @@ export default function Create({ projects = [] }) {
 
                 {/* Form Container with Glassmorphism */}
                 <div className="relative bg-white dark:bg-gray-900  border border-white/20 dark:border-gray-800/50 shadow-xl rounded-[2rem] overflow-hidden">
-                    
-                    
+
+
                     <form onSubmit={submit} className="relative z-10">
-                    {Object.keys(errors).length > 0 && (
-                        <div className="mx-8 mt-8 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl">
-                            <p className="text-red-600 dark:text-red-400 font-bold mb-1">Attention, le formulaire contient des erreurs :</p>
-                            <ul className="list-disc list-inside text-sm text-red-500 dark:text-red-400/80">
-                                {Object.values(errors).map((err, idx) => (
-                                    <li key={idx}>{err}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
+                        {Object.keys(errors).length > 0 && (
+                            <div className="mx-8 mt-8 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl">
+                                <p className="text-red-600 dark:text-red-400 font-bold mb-1">Attention, le formulaire contient des erreurs :</p>
+                                <ul className="list-disc list-inside text-sm text-red-500 dark:text-red-400/80">
+                                    {Object.values(errors).map((err, idx) => (
+                                        <li key={idx}>{err}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
 
                         <div className="min-h-[400px] p-8 md:p-12 overflow-hidden">
                             <AnimatePresence initial={false} custom={direction} mode="wait">
@@ -185,7 +189,7 @@ export default function Create({ projects = [] }) {
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <InputLabel value="CIN / Passeport" className="text-gray-600 dark:text-gray-400" />
-                                                    <TextInput value={data.c_cin} onChange={e => setData('c_cin', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" placeholder="Ex: AB123456" />
+                                                    <CinCheckInput value={data.c_cin} onChange={e => setData('c_cin', e.target.value)} type="all" className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl" placeholder="Ex: AB123456" />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <InputLabel value="Validité CIN" className="text-gray-600 dark:text-gray-400" />
@@ -222,17 +226,31 @@ export default function Create({ projects = [] }) {
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <InputLabel value="Statut" className="text-gray-600 dark:text-gray-400" />
-                                                    <select value={data.status} onChange={e => setData('status', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  border-gray-200/50 dark:border-gray-700/50 rounded-xl text-gray-700 dark:text-gray-300">
-                                                        <option value="active">Actif</option>
-                                                        <option value="inactive">Inactif</option>
+                                                    <select
+                                                        value={data.statut || data.status || data.c_statut}
+                                                        onChange={e => {
+                                                            setData('statut', e.target.value);
+                                                            setData('c_statut', e.target.value);
+                                                            setData('status', e.target.value);
+                                                        }}
+                                                        className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200/50 dark:border-gray-700/50 rounded-xl text-gray-700 dark:text-gray-300"
+                                                    >
+                                                        {availableStatuses.map(st => (
+                                                            <option key={st} value={st}>{st}</option>
+                                                        ))}
                                                     </select>
                                                 </div>
                                                 <div className="space-y-2">
                                                     <InputLabel value="Source" className="text-gray-600 dark:text-gray-400" />
-                                                    <select value={data.c_source} onChange={e => setData('c_source', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  border-gray-200/50 dark:border-gray-700/50 rounded-xl text-gray-700 dark:text-gray-300">
+                                                    <select
+                                                        value={data.c_source}
+                                                        onChange={e => setData('c_source', e.target.value)}
+                                                        className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200/50 dark:border-gray-700/50 rounded-xl text-gray-700 dark:text-gray-300"
+                                                    >
                                                         <option value="">-- Sélectionnez --</option>
-                                                        <option value="Facebook">Facebook</option>
-                                                        <option value="Recommendation">Recommendation</option>
+                                                        {RECRUITMENT_SOURCES.map(src => (
+                                                            <option key={src} value={src}>{src}</option>
+                                                        ))}
                                                     </select>
                                                 </div>
                                             </div>
@@ -337,7 +355,7 @@ export default function Create({ projects = [] }) {
                                                 <InputLabel value="Mobilité du Patient" className="text-gray-700 dark:text-gray-300 mb-4" />
                                                 <div className="flex gap-4">
                                                     {['Oui', 'Non'].map(opt => (
-                                                        <div 
+                                                        <div
                                                             key={opt}
                                                             onClick={() => setData('mobility', opt)}
                                                             className={cn(
@@ -355,7 +373,7 @@ export default function Create({ projects = [] }) {
                                                 <InputLabel value="Animaux Domestiques" className="text-amber-900 dark:text-amber-400 mb-4" />
                                                 <div className="flex gap-4 mb-4">
                                                     {['Oui', 'Non'].map(opt => (
-                                                        <div 
+                                                        <div
                                                             key={opt}
                                                             onClick={() => setData('c_presence_animaux', opt)}
                                                             className={cn(
@@ -408,9 +426,9 @@ export default function Create({ projects = [] }) {
 
                         {/* Bottom Navigation */}
                         <div className="border-t border-gray-100/20 dark:border-gray-800/50 bg-gray-50 dark:bg-gray-900  p-6 flex items-center justify-between">
-                            <button 
-                                type="button" 
-                                onClick={() => navigateStep(currentStep - 1)} 
+                            <button
+                                type="button"
+                                onClick={() => navigateStep(currentStep - 1)}
                                 className={cn(
                                     "flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all",
                                     currentStep === 1 ? "opacity-0 pointer-events-none" : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm border border-gray-200 dark:border-gray-700"
@@ -420,16 +438,16 @@ export default function Create({ projects = [] }) {
                             </button>
 
                             {currentStep < steps.length ? (
-                                <button 
-                                    type="button" 
-                                    onClick={() => navigateStep(currentStep + 1)} 
+                                <button
+                                    type="button"
+                                    onClick={() => navigateStep(currentStep + 1)}
                                     className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all hover:scale-105"
                                 >
                                     Suivant <FiChevronRight size={20} />
                                 </button>
                             ) : (
-                                <button 
-                                    type="submit" 
+                                <button
+                                    type="submit"
                                     disabled={processing}
                                     className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 disabled:opacity-75 disabled:hover:scale-100"
                                 >

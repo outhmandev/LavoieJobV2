@@ -7,7 +7,7 @@ export default function Dashboard({ stats, recentActivity }) {
     const dashboardStats = [
         { title: 'Total Clients', value: stats?.totalClients || 0, change: '+0%', icon: <FiUsers />, color: 'bg-blue-500' },
         { title: 'Active Profiles', value: stats?.activeProfiles || 0, change: '+0%', icon: <FiUserCheck />, color: 'bg-emerald-500' },
-        { title: 'Open Assignments', value: stats?.openAssignments || 0, change: '+0%', icon: <FiBriefcase />, color: 'bg-indigo-500' },
+        { title: 'Contrat', value: stats?.openAssignments || 0, change: '+0%', icon: <FiBriefcase />, color: 'bg-indigo-500' },
         { title: 'Monthly Revenue', value: stats?.monthlyRevenue || '$0.00', change: '+0%', icon: <FiTrendingUp />, color: 'bg-purple-500' },
     ];
 
@@ -71,11 +71,10 @@ export default function Dashboard({ stats, recentActivity }) {
                                             <td className="py-4 px-6 text-sm font-medium text-gray-900 dark:text-white">{item.action}</td>
                                             <td className="py-4 px-6 text-sm text-gray-500">{item.name}</td>
                                             <td className="py-4 px-6 text-sm">
-                                                <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${
-                                                    item.status === 'completed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
-                                                    item.status === 'processing' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' :
-                                                    'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
-                                                }`}>
+                                                <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${item.status === 'completed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
+                                                        item.status === 'processing' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400' :
+                                                            'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+                                                    }`}>
                                                     {item.status}
                                                 </span>
                                             </td>
@@ -98,8 +97,8 @@ export default function Dashboard({ stats, recentActivity }) {
                                 The new AI-powered matching engine has found 24 new perfect candidate fits for your open assignments.
                             </p>
                         </div>
-                        <Link 
-                            href={route('assignments.index')} 
+                        <Link
+                            href={route('assignments.index')}
                             className="bg-white text-indigo-700 hover:bg-gray-50 font-semibold py-3 px-4 rounded-xl text-center transition-colors duration-200 shadow-sm"
                         >
                             Review Matches

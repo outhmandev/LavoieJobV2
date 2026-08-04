@@ -5,6 +5,7 @@ import { FiHome, FiUsers, FiUserCheck, FiBriefcase, FiMenu, FiX, FiBell, FiSearc
 import { useState } from 'react';
 import TimeTrackerWidget from '@/Components/TimeTrackerWidget';
 import ChatWidget from '@/Components/ChatWidget';
+import NotificationDropdown from '@/Components/NotificationDropdown';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
@@ -22,11 +23,10 @@ export default function AuthenticatedLayout({ header, children }) {
     const NavItem = ({ href, active, icon, children }) => (
         <Link
             href={href}
-            className={`flex items-center px-4 py-3 my-1 rounded-xl transition-all duration-200 ${
-                active 
-                    ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 font-semibold shadow-sm border border-indigo-100 dark:border-indigo-500/20' 
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 font-medium border border-transparent'
-            }`}
+            className={`flex items-center px-4 py-3 my-1 rounded-xl transition-all duration-200 ${active
+                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400 font-semibold shadow-sm border border-indigo-100 dark:border-indigo-500/20'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 font-medium border border-transparent'
+                }`}
         >
             <span className={`mr-3 text-lg ${active ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-400 dark:text-gray-500'}`}>
                 {icon}
@@ -49,7 +49,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 </div>
 
                 <div className="px-5 py-8 space-y-1 overflow-y-auto h-[calc(100vh-5rem)]">
-                    <div 
+                    <div
                         className="mb-2 mt-2 px-4 text-xs font-bold tracking-wider text-gray-400 uppercase cursor-pointer flex justify-between items-center hover:text-gray-600 transition-colors"
                         onClick={() => toggleCategory('overview')}
                     >
@@ -61,8 +61,8 @@ export default function AuthenticatedLayout({ header, children }) {
                             Tableau de bord
                         </NavItem>
                     )}
-                    
-                    <div 
+
+                    <div
                         className="mt-8 mb-2 px-4 text-xs font-bold tracking-wider text-gray-400 uppercase cursor-pointer flex justify-between items-center hover:text-gray-600 transition-colors"
                         onClick={() => toggleCategory('management')}
                     >
@@ -78,7 +78,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                 Candidats
                             </NavItem>
                             <NavItem href={route('assignments.index')} active={route().current('assignments.*')} icon={<FiBriefcase />}>
-                                Affectations / Contrats
+                                Affectations
                             </NavItem>
                         </>
                     )}
@@ -86,7 +86,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     {/* Admin Links (visible for specific roles) */}
                     {['System Administrator', 'super Admin'].includes(user.role) && (
                         <>
-                            <div 
+                            <div
                                 className="pt-8 pb-2 px-4 text-xs font-bold tracking-wider text-gray-400 uppercase cursor-pointer flex justify-between items-center hover:text-gray-600 transition-colors"
                                 onClick={() => toggleCategory('admin')}
                             >
@@ -125,7 +125,7 @@ export default function AuthenticatedLayout({ header, children }) {
                         <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-2 text-gray-500 hover:text-gray-700 bg-gray-50 rounded-lg">
                             <FiMenu size={22} />
                         </button>
-                        
+
                         {/* Global Search */}
                         <div className="hidden md:flex items-center bg-gray-100/70 dark:bg-gray-800/50 rounded-xl px-4 py-2.5 w-full border border-gray-200/50 dark:border-gray-700/50 focus-within:border-indigo-500 focus-within:bg-white focus-within:ring-4 focus-within:ring-indigo-500/10 dark:focus-within:bg-gray-800 transition-all duration-200">
                             <FiSearch className="text-gray-400" size={18} />
@@ -142,10 +142,7 @@ export default function AuthenticatedLayout({ header, children }) {
                             <TimeTrackerWidget />
                         </div>
 
-                        <button className="relative p-2 text-gray-400 hover:text-indigo-600 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                            <FiBell size={20} />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-gray-900"></span>
-                        </button>
+                        <NotificationDropdown />
 
                         <div className="h-8 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block"></div>
 
@@ -156,7 +153,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                         {user.name.charAt(0)}
                                     </div>
                                     <div className="hidden sm:block text-left">
-                                        <p className="font-semibold text-gray-800 dark:text-gray-200">{user.name}</p>
+                                        <p className="font-semibold text-gray-800 dark:text-gray-200">{user.nom}</p>
                                         <p className="text-[11px] text-gray-500 font-medium uppercase tracking-wider">{user.role}</p>
                                     </div>
                                 </button>
@@ -186,12 +183,12 @@ export default function AuthenticatedLayout({ header, children }) {
             </div>
 
             {sidebarOpen && (
-                <div 
+                <div
                     className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity"
                     onClick={() => setSidebarOpen(false)}
                 />
             )}
-            
+
             <ChatWidget />
         </div>
     );

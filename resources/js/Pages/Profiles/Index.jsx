@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { FiPlus, FiEdit2, FiTrash2, FiMoreVertical, FiUserCheck, FiStar, FiSearch, FiFilter, FiX } from 'react-icons/fi';
 import Dropdown from '@/Components/Dropdown';
+import { getProfileStatusBadgeClass } from '@/constants';
 
 export default function Index({ profiles, filters, options }) {
     const [filterValues, setFilterValues] = useState({
@@ -18,7 +19,7 @@ export default function Index({ profiles, filters, options }) {
     };
 
     const applyFilters = (e) => {
-        e.preventDefault(); 
+        e.preventDefault();
         router.get(route('profiles.index'), filterValues, {
             preserveState: true,
             preserveScroll: true
@@ -173,16 +174,16 @@ export default function Index({ profiles, filters, options }) {
                             {profiles.data.map(profile => (
                                 <tr key={profile.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors group">
                                     <td className="py-4 px-6 text-sm font-mono font-medium text-indigo-600 dark:text-indigo-400">
-                                        {profile.reference || <span className="text-gray-300">-</span>}
+                                        {profile.matricule || profile.mat || profile.reference || <span className="text-gray-300">-</span>}
                                     </td>
                                     <td className="py-4 px-6">
                                         <div className="flex items-center gap-3">
                                             <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 flex items-center justify-center font-bold text-sm">
-                                                {profile.full_name?.charAt(0) || '?'}
+                                                {(profile.nom || profile.full_name)?.charAt(0) || '?'}
                                             </div>
                                             <div>
-                                                <p className="font-semibold text-gray-900 dark:text-white">{profile.full_name || 'N/A'}</p>
-                                                <p className="text-xs text-gray-400">{profile.current_city}</p>
+                                                <p className="font-semibold text-gray-900 dark:text-white">{profile.nom || profile.full_name || 'N/A'}</p>
+                                                <p className="text-xs text-gray-400">{profile.current_city || profile.ville_a || profile.origin_city}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -190,13 +191,10 @@ export default function Index({ profiles, filters, options }) {
                                         {profile.cin || <span className="text-gray-300">-</span>}
                                     </td>
                                     <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">{profile.project?.name || <span className="text-gray-300">-</span>}</td>
-                                    <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">{profile.job || <span className="text-gray-300">-</span>}</td>
+                                    <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">{profile.fonction || profile.job || <span className="text-gray-300">-</span>}</td>
                                     <td className="py-4 px-6 text-sm">
-                                        <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${profile.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
-                                                profile.status === 'inactive' ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' :
-                                                    'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
-                                            }`}>
-                                            {profile.status || 'pending'}
+                                        <span className="text-gray-700 dark:text-gray-300 font-medium">
+                                            {profile.status || profile.statut || 'N/A'}
                                         </span>
                                     </td>
                                     <td className="py-4 px-6 text-sm">
