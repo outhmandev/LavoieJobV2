@@ -1,7 +1,8 @@
 <IfModule mod_rewrite.c>
-    <IfModule mod_negotiation.c>
-        Options -MultiViews -Indexes
-    </IfModule>
+    # cPanel Fix: Commented out Options to prevent 403/500 errors on strict shared hosting
+    # <IfModule mod_negotiation.c>
+    #    Options -MultiViews -Indexes
+    # </IfModule>
 
     RewriteEngine On
 
