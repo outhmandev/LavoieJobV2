@@ -8,7 +8,8 @@ import { getProfileStatusBadgeClass } from '@/constants';
 export default function Index({ profiles, filters, options }) {
     const [filterValues, setFilterValues] = useState({
         project_id: filters?.project_id || '',
-        reference: filters?.reference || '',
+        cin: filters?.cin || '',
+        matricule: filters?.matricule || filters?.reference || '',
         nom: filters?.nom || '',
         ville: filters?.ville || '',
         statut: filters?.statut || ''
@@ -27,7 +28,7 @@ export default function Index({ profiles, filters, options }) {
     };
 
     const clearFilters = () => {
-        const emptyFilters = { project_id: '', reference: '', nom: '', ville: '', statut: '' };
+        const emptyFilters = { project_id: '', cin: '', matricule: '', nom: '', ville: '', statut: '' };
         setFilterValues(emptyFilters);
         router.get(route('profiles.index'), {}, {
             preserveState: true,
@@ -35,13 +36,22 @@ export default function Index({ profiles, filters, options }) {
         });
     };
 
+    const handleDeleteProfile = (profile) => {
+        const profileName = profile.nom || profile.full_name || 'ce profil';
+        if (window.confirm(`Êtes-vous sûr de vouloir supprimer le profil candidat "${profileName}" ? Cette action est irréversible.`)) {
+            router.delete(route('profiles.destroy', profile.id), {
+                preserveScroll: true
+            });
+        }
+    };
+
     return (
         <AuthenticatedLayout
             header={
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Candidate Profiles</h2>
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage available professionals and candidate pool.</p>
+                        <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Profils des Candidats</h2>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Gérez le vivier de candidats et professionnels disponibles.</p>
                     </div>
                     <div className="mt-4 md:mt-0">
                         <Link
@@ -49,47 +59,60 @@ export default function Index({ profiles, filters, options }) {
                             className="inline-flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-indigo-700 hover:shadow-md transition-all duration-200"
                         >
                             <FiPlus size={18} />
-                            Add New Profile
+                            Ajouter un profil
                         </Link>
                     </div>
                 </div>
             }
         >
-            <Head title="Profiles" />
+            <Head title="Profils" />
 
             <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800/80 p-5">
                 <div className="flex items-center gap-2 mb-4">
                     <FiFilter className="text-gray-400" />
-                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Advanced Filters</h3>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Filtres avancés</h3>
                 </div>
 
                 <form onSubmit={applyFilters}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                         {/* Project Filter */}
                         <div>
-                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Project</label>
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Projet</label>
                             <select
                                 name="project_id"
                                 value={filterValues.project_id}
                                 onChange={handleFilterChange}
                                 className="w-full text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
                             >
-                                <option value="">All Projects</option>
+                                <option value="">Tous les projets</option>
                                 {options.projects.map(p => (
                                     <option key={p.id} value={p.id}>{p.name}</option>
                                 ))}
                             </select>
                         </div>
 
-                        {/* Reference Filter */}
+                        {/* CIN Filter */}
                         <div>
-                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Reference (CIN/Matricule)</label>
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Cin :</label>
                             <input
                                 type="text"
-                                name="reference"
-                                value={filterValues.reference}
+                                name="cin"
+                                value={filterValues.cin}
                                 onChange={handleFilterChange}
-                                placeholder="Search ref/cin..."
+                                placeholder="Rechercher CIN..."
+                                className="w-full text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
+                            />
+                        </div>
+
+                        {/* Mat de profil Filter */}
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Mat de profil :</label>
+                            <input
+                                type="text"
+                                name="matricule"
+                                value={filterValues.matricule}
+                                onChange={handleFilterChange}
+                                placeholder="Rechercher matricule..."
                                 className="w-full text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
                             />
                         </div>
@@ -102,7 +125,7 @@ export default function Index({ profiles, filters, options }) {
                                 name="nom"
                                 value={filterValues.nom}
                                 onChange={handleFilterChange}
-                                placeholder="Search name..."
+                                placeholder="Rechercher nom..."
                                 className="w-full text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
                             />
                         </div>
@@ -115,7 +138,7 @@ export default function Index({ profiles, filters, options }) {
                                 name="ville"
                                 value={filterValues.ville}
                                 onChange={handleFilterChange}
-                                placeholder="Search city..."
+                                placeholder="Rechercher ville..."
                                 className="w-full text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
                             />
                         </div>
@@ -129,7 +152,7 @@ export default function Index({ profiles, filters, options }) {
                                 onChange={handleFilterChange}
                                 className="w-full text-sm border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
                             >
-                                <option value="">All Statuses</option>
+                                <option value="">Tous les statuts</option>
                                 {options.statuses.map(s => (
                                     <option key={s} value={s}>{s}</option>
                                 ))}
@@ -143,13 +166,13 @@ export default function Index({ profiles, filters, options }) {
                             onClick={clearFilters}
                             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition-colors"
                         >
-                            <FiX /> Clear Filters
+                            <FiX /> Réinitialiser les filtres
                         </button>
                         <button
                             type="submit"
                             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
                         >
-                            <FiSearch /> Search Profiles
+                            <FiSearch /> Rechercher des profils
                         </button>
                     </div>
                 </form>
@@ -161,12 +184,12 @@ export default function Index({ profiles, filters, options }) {
                         <thead>
                             <tr className="bg-gray-50/80 dark:bg-gray-800/80 border-b border-gray-100 dark:border-gray-700/50">
                                 <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Matricule</th>
-                                <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Candidate Name</th>
-                                <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">CIN / Ref</th>
-                                <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Project</th>
-                                <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Job Role</th>
-                                <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                                <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rating</th>
+                                <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Nom du candidat</th>
+                                <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">CIN / Réf</th>
+                                <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Projet</th>
+                                <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fonction / Poste</th>
+                                <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Statut</th>
+                                <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Évaluation</th>
                                 <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
                             </tr>
                         </thead>
@@ -212,11 +235,15 @@ export default function Index({ profiles, filters, options }) {
                                             </Dropdown.Trigger>
                                             <Dropdown.Content align="right" width="48">
                                                 <Dropdown.Link href={route('profiles.edit', profile.id)} className="flex items-center gap-2">
-                                                    <FiEdit2 className="text-gray-400" /> Edit Details
+                                                    <FiEdit2 className="text-gray-400" /> Modifier Profil
                                                 </Dropdown.Link>
-                                                <Dropdown.Link href="#" as="button" className="flex items-center gap-2 text-rose-600 hover:bg-rose-50">
-                                                    <FiTrash2 className="text-rose-500" /> Delete Profile
-                                                </Dropdown.Link>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteProfile(profile)}
+                                                    className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors"
+                                                >
+                                                    <FiTrash2 className="text-rose-500" /> Supprimer Profil
+                                                </button>
                                             </Dropdown.Content>
                                         </Dropdown>
                                     </td>
@@ -229,10 +256,10 @@ export default function Index({ profiles, filters, options }) {
                                             <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
                                                 <FiUserCheck size={28} className="text-gray-400" />
                                             </div>
-                                            <p className="text-lg font-medium text-gray-900 dark:text-white">No profiles found</p>
-                                            <p className="text-sm mt-1 mb-4">Try adjusting your filters or create a new profile.</p>
+                                            <p className="text-lg font-medium text-gray-900 dark:text-white">Aucun profil trouvé</p>
+                                            <p className="text-sm mt-1 mb-4">Essayez d'ajuster vos filtres ou d'ajouter un nouveau profil.</p>
                                             <button onClick={clearFilters} className="text-indigo-600 hover:text-indigo-700 font-medium">
-                                                Clear all filters
+                                                Réinitialiser tous les filtres
                                             </button>
                                         </div>
                                     </td>

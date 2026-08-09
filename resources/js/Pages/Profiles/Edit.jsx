@@ -7,8 +7,11 @@ import CinCheckInput from '@/Components/CinCheckInput';
 import LanguageSelector from '@/Components/LanguageSelector';
 import ReligionSelector from '@/Components/ReligionSelector';
 import PetAllergiesSelector from '@/Components/PetAllergiesSelector';
+import DiseaseSelector from '@/Components/DiseaseSelector';
+import ChildrenDetailsEditor from '@/Components/ChildrenDetailsEditor';
+import DynamicSelect from '@/Components/DynamicSelect';
 import Dropdown from '@/Components/Dropdown';
-import { FiArrowLeft, FiSave, FiCheckCircle, FiChevronRight, FiChevronLeft, FiUser, FiMapPin, FiBriefcase, FiStar, FiPrinter, FiMail, FiPhone, FiCalendar, FiClock, FiMoreVertical, FiEdit2, FiTrash2, FiPlus, FiFileText } from 'react-icons/fi';
+import { FiArrowLeft, FiSave, FiCheckCircle, FiChevronRight, FiChevronLeft, FiUser, FiMapPin, FiBriefcase, FiStar, FiPrinter, FiMail, FiPhone, FiCalendar, FiClock, FiMoreVertical, FiEdit2, FiTrash2, FiPlus, FiFileText, FiEye, FiDownload, FiFile, FiUploadCloud } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -25,7 +28,15 @@ const steps = [
     { id: 4, name: 'Compétences', icon: FiStar },
 ];
 
-export default function Edit({ profile, projects = [], statuses = PROFILE_STATUSES }) {
+const formatDateForInput = (val) => {
+    if (!val) return '';
+    const s = String(val).trim();
+    if (s.includes('T')) return s.split('T')[0];
+    if (s.includes(' ')) return s.split(' ')[0];
+    return s.substring(0, 10);
+};
+
+export default function Edit({ profile, projects = [], statuses = PROFILE_STATUSES, hasActiveContract = false }) {
     const availableStatuses = Array.from(new Set([
         profile.status,
         profile.statut,
@@ -40,8 +51,8 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
         matricule: profile.matricule || profile.mat || '',
         full_name: profile.full_name || profile.nom || '',
         cin: profile.cin || '',
-        cin_validity: profile.cin_validity || '',
-        birth_date: profile.birth_date || profile.date_naissance || '',
+        cin_validity: formatDateForInput(profile.cin_validity || profile.cin_v),
+        birth_date: formatDateForInput(profile.birth_date || profile.date_naissance),
         birth_city: profile.birth_city || profile.ville_o || '',
         nationality: profile.nationality || profile.nationalite || 'Maroc',
         religion: profile.religion || '',
@@ -49,6 +60,7 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
         education_specialty: profile.education_specialty || '',
         marital_status: profile.marital_status || profile.situation_familiale || '',
         children_count: profile.children_count || profile.nombre_enfant || '',
+        children_details: profile.children_details || profile.enfants_details || '',
         cin_address: profile.cin_address || profile.adresse_cin || '',
         origin_city: profile.origin_city || profile.ville_origin || '',
         current_address: profile.current_address || profile.current_adresse || '',
@@ -104,8 +116,17 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
     };
 
     const submit = (e) => {
-        e.preventDefault();
+        if (e && e.preventDefault) e.preventDefault();
+        if (currentStep !== steps.length) {
+            return;
+        }
         put(route('profiles.update', profile.id));
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+        }
     };
 
     // Animation Variants
@@ -122,6 +143,12 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
         window.print();
     };
 
+    const handleDelete = () => {
+        const profileName = profile?.nom || profile?.full_name || 'ce profil';
+        if (window.confirm(`Êtes-vous sûr de vouloir supprimer le profil candidat "${profileName}" ? Cette action est irréversible.`)) {
+            router.delete(route('profiles.destroy', profile.id));
+        }
+    };
 
     const navigateStep = (newStep) => {
         setPage([newStep, newStep > currentStep ? 1 : -1]);
@@ -144,9 +171,17 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold rounded-lg border border-indigo-200 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shadow-sm">
+                        <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-bold rounded-lg border border-indigo-200 dark:border-indigo-800/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors shadow-sm text-sm">
                             <FiPrinter size={18} />
                             <span className="hidden sm:inline">Imprimer le CV</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            onClick={handleDelete} 
+                            className="flex items-center gap-2 px-4 py-2 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 font-bold rounded-lg border border-rose-200 dark:border-rose-800/50 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors shadow-sm text-sm"
+                        >
+                            <FiTrash2 size={18} />
+                            <span className="hidden sm:inline">Supprimer Profil</span>
                         </button>
                     </div>
                 </div>
@@ -207,8 +242,8 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                     <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-1">Expérience</div>
                                     <div className="text-xl font-black text-gray-900 dark:text-white">{profile.experience_years || 0} <span className="text-sm font-medium text-gray-500">ans</span></div>
                                 </div>
-                                <div className="bg-emerald-50 dark:bg-emerald-900/10 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800/50">
-                                    <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-1">Salaire</div>
+                                <div className="bg-indigo-50 dark:bg-indigo-900/10 p-3 rounded-lg border border-indigo-100 dark:border-indigo-800/50">
+                                    <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-1">Salaire</div>
                                     <div className="text-xl font-black text-gray-900 dark:text-white">{profile.max_price || '-'} <span className="text-sm font-medium text-gray-500">dh</span></div>
                                 </div>
                             </div>
@@ -308,7 +343,7 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                     </div>
                                                     <div className="flex justify-between items-center bg-gray-50 print:bg-white p-2 rounded">
                                                         <span className="font-semibold text-gray-500 print:text-gray-600">Disponibilité:</span>
-                                                        <span className="font-bold text-emerald-600">Immédiate</span>
+                                                        <span className="font-bold text-indigo-600">Immédiate</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -342,7 +377,33 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                     </div>
                                                     <div className="flex gap-2">
                                                         <span className="font-semibold text-gray-500 print:text-gray-600 w-24">Enfants:</span>
-                                                        <span>{profile.children_count || 0}</span>
+                                                        <div>
+                                                            <span>{profile.children_count || profile.nombre_enfant || 0}</span>
+                                                            {(() => {
+                                                                let raw = profile.children_details || profile.enfants_details;
+                                                                if (!raw) return null;
+                                                                let kids = [];
+                                                                if (typeof raw === 'string' && raw.trim().startsWith('[')) {
+                                                                    try { kids = JSON.parse(raw); } catch (e) { kids = []; }
+                                                                } else if (Array.isArray(raw)) {
+                                                                    kids = raw;
+                                                                }
+                                                                if (kids.length > 0) {
+                                                                    return (
+                                                                        <div className="mt-1 space-y-0.5 text-xs text-gray-600 dark:text-gray-400">
+                                                                            {kids.map((k, idx) => (
+                                                                                <div key={idx}>
+                                                                                    • {k.gender === 'Garçon' ? '👦 Garçon' : (k.gender === 'Fille' ? '👧 Fille' : 'Enfant')}
+                                                                                    {k.age ? ` (${k.age})` : ''}
+                                                                                    {k.comment ? ` : ${k.comment}` : ''}
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            })()}
+                                                        </div>
                                                     </div>
                                                     <div className="flex gap-2">
                                                         <span className="font-semibold text-gray-500 print:text-gray-600 w-24">Permis:</span>
@@ -427,7 +488,7 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                     <div className="mb-10 relative">
                                         <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-full -z-10 transform -translate-y-1/2"></div>
                                         <div
-                                            className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-700 ease-out -z-10 transform -translate-y-1/2"
+                                            className="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-700 ease-out -z-10 transform -translate-y-1/2"
                                             style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
                                         ></div>
 
@@ -445,8 +506,8 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                             whileTap={{ scale: 0.95 }}
                                                             className={cn(
                                                                 "w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 border-2",
-                                                                isCompleted ? "bg-emerald-600 border-emerald-600 text-white" :
-                                                                    isCurrent ? "bg-white dark:bg-gray-900 border-emerald-500 text-emerald-500 shadow-emerald-500/30" :
+                                                                isCompleted ? "bg-indigo-600 border-indigo-600 text-white" :
+                                                                    isCurrent ? "bg-white dark:bg-gray-900 border-indigo-500 text-indigo-500 shadow-indigo-500/30" :
                                                                         "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400"
                                                             )}
                                                         >
@@ -454,7 +515,7 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                         </motion.button>
                                                         <span className={cn(
                                                             "mt-3 text-xs md:text-sm font-bold transition-colors",
-                                                            isCurrent ? "text-emerald-600 dark:text-emerald-400" :
+                                                            isCurrent ? "text-indigo-600 dark:text-indigo-400" :
                                                                 isCompleted ? "text-gray-900 dark:text-gray-200" :
                                                                     "text-gray-400 dark:text-gray-500"
                                                         )}>
@@ -470,7 +531,7 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                     <div className="relative bg-white dark:bg-gray-900  border border-white/20 dark:border-gray-800/50 shadow-xl rounded-[2rem] overflow-hidden">
 
 
-                                        <form onSubmit={submit} className="relative z-10">
+                                        <form onSubmit={submit} onKeyDown={handleKeyDown} className="relative z-10">
                                             {Object.keys(errors).length > 0 && (
                                                 <div className="mx-8 mt-8 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl">
                                                     <p className="text-red-600 dark:text-red-400 font-bold mb-1">Attention, le formulaire contient des erreurs :</p>
@@ -493,21 +554,21 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                         {currentStep === 1 && (
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                                 <div className="md:col-span-2 flex items-center gap-3 mb-2">
-                                                                    <div className="p-2 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg text-emerald-600 dark:text-emerald-400"><FiUser size={20} /></div>
+                                                                    <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg text-indigo-600 dark:text-indigo-400"><FiUser size={20} /></div>
                                                                     <h3 className="text-xl font-bold text-gray-900 dark:text-white">Profil Personnel</h3>
                                                                 </div>
 
                                                                 {/* File Uploads */}
                                                                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
-                                                                    <div className="p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-emerald-500 transition-colors bg-gray-50 dark:bg-gray-800">
+                                                                    <div className="p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-colors bg-gray-50 dark:bg-gray-800">
                                                                         <InputLabel value="Photo de profil" className="text-center font-semibold mb-2" />
-                                                                        <input type="file" className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700" />
+                                                                        <input type="file" className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700" />
                                                                     </div>
-                                                                    <div className="p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-emerald-500 transition-colors bg-gray-50 dark:bg-gray-800">
+                                                                    <div className="p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-colors bg-gray-50 dark:bg-gray-800">
                                                                         <InputLabel value="CIN / Passeport" className="text-center font-semibold mb-2" />
                                                                         <input type="file" className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700" />
                                                                     </div>
-                                                                    <div className="p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-emerald-500 transition-colors bg-gray-50 dark:bg-gray-800">
+                                                                    <div className="p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-colors bg-gray-50 dark:bg-gray-800">
                                                                         <InputLabel value="CV (Document)" className="text-center font-semibold mb-2" />
                                                                         <input type="file" className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700" />
                                                                     </div>
@@ -567,22 +628,29 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                                     />
                                                                 </div>
 
-                                                                <div className="grid grid-cols-2 gap-4">
-                                                                    <div className="space-y-2">
-                                                                        <InputLabel value="Situation familiale" className="text-gray-600 dark:text-gray-400" />
-                                                                        <select value={data.marital_status} onChange={e => setData('marital_status', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300">
-                                                                            <option value="">-- Sélectionnez --</option>
-                                                                            <option value="Célibataire">Célibataire</option>
-                                                                            <option value="Marié(e)">Marié(e)</option>
-                                                                            <option value="Divorcé(e)">Divorcé(e)</option>
-                                                                            <option value="Veuf(ve)">Veuf(ve)</option>
-                                                                        </select>
-                                                                    </div>
-                                                                    <div className="space-y-2">
-                                                                        <InputLabel value="Enfants" className="text-gray-600 dark:text-gray-400" />
-                                                                        <TextInput type="number" value={data.children_count} onChange={e => setData('children_count', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl" />
-                                                                    </div>
+                                                                <div className="space-y-2">
+                                                                    <InputLabel value="Situation familiale" className="text-gray-600 dark:text-gray-400" />
+                                                                    <select value={data.marital_status} onChange={e => setData('marital_status', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300">
+                                                                        <option value="">-- Sélectionnez --</option>
+                                                                        <option value="Célibataire">Célibataire</option>
+                                                                        <option value="Marié(e)">Marié(e)</option>
+                                                                        <option value="Divorcé(e)">Divorcé(e)</option>
+                                                                        <option value="Veuf(ve)">Veuf(ve)</option>
+                                                                    </select>
                                                                 </div>
+
+                                                                <ChildrenDetailsEditor
+                                                                    count={data.children_count}
+                                                                    onCountChange={(val) => {
+                                                                        setData(prev => ({ ...prev, children_count: val, nombre_enfant: val }));
+                                                                    }}
+                                                                    details={data.children_details}
+                                                                    onDetailsChange={(val) => {
+                                                                        setData(prev => ({ ...prev, children_details: val, enfants_details: val }));
+                                                                    }}
+                                                                    colorScheme="indigo"
+                                                                    label="Enfants"
+                                                                />
                                                             </div>
                                                         )}
 
@@ -653,12 +721,12 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                                 <div className="grid grid-cols-2 gap-4">
                                                                     <div className="space-y-2">
                                                                         <InputLabel value="Niveau d'étude" className="text-gray-600 dark:text-gray-400" />
-                                                                        <select value={data.education_level} onChange={e => setData('education_level', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300">
-                                                                            <option value="">-- Sélectionnez --</option>
-                                                                            {EDUCATION_LEVELS.map(lvl => (
-                                                                                <option key={lvl} value={lvl}>{lvl}</option>
-                                                                            ))}
-                                                                        </select>
+                                                                        <DynamicSelect 
+                                                                            value={data.education_level} 
+                                                                            onChange={val => setData('education_level', val)} 
+                                                                            options={EDUCATION_LEVELS}
+                                                                            className="w-full h-[42px]"
+                                                                        />
                                                                     </div>
                                                                     <div className="space-y-2">
                                                                         <InputLabel value="Spécialité" className="text-gray-600 dark:text-gray-400" />
@@ -770,14 +838,12 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="p-5 bg-rose-50/50 dark:bg-rose-900/10 rounded-2xl border border-rose-200/50 dark:border-rose-800/30 self-start">
-                                                                    <InputLabel value="Maladies chroniques ?" className="text-rose-900 dark:text-rose-400 mb-3" />
-                                                                    <div className="flex gap-4">
-                                                                        {['Oui', 'Non'].map(opt => (
-                                                                            <div key={opt} onClick={() => setData('has_diseases', opt)} className={cn("flex-1 text-center py-2 rounded-xl border-2 cursor-pointer font-semibold", data.has_diseases === opt ? "border-rose-500 bg-rose-500/10 text-rose-600 dark:text-rose-400" : "border-gray-200 dark:border-gray-700 text-gray-500 bg-white dark:bg-gray-800")}>{opt}</div>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
+                                                                <DiseaseSelector
+                                                                    isDiseased={data.has_diseases}
+                                                                    onIsDiseasedChange={val => setData('has_diseases', val)}
+                                                                    details={data.disease_details}
+                                                                    onDetailsChange={val => setData('disease_details', val)}
+                                                                />
 
                                                                 <PetAllergiesSelector
                                                                     isAllergic={data.pet_allergies}
@@ -797,12 +863,12 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                                     </div>
                                                                     <div className="space-y-2">
                                                                         <InputLabel value="Source de recrutement" className="text-gray-600 dark:text-gray-400" />
-                                                                        <select value={data.source} onChange={e => setData('source', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300">
-                                                                            <option value="">-- Sélectionnez --</option>
-                                                                            {RECRUITMENT_SOURCES.map(src => (
-                                                                                <option key={src} value={src}>{src}</option>
-                                                                            ))}
-                                                                        </select>
+                                                                        <DynamicSelect 
+                                                                            value={data.source} 
+                                                                            onChange={val => setData('source', val)} 
+                                                                            options={RECRUITMENT_SOURCES}
+                                                                            className="w-full h-[42px]"
+                                                                        />
                                                                     </div>
                                                                 </div>
 
@@ -831,15 +897,18 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
 
                                                 {currentStep < steps.length ? (
                                                     <button
+                                                        key="btn-next"
                                                         type="button"
                                                         onClick={() => navigateStep(currentStep + 1)}
-                                                        className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-emerald-500/30 transition-all hover:scale-105"
+                                                        className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all hover:scale-105"
                                                     >
                                                         Suivant <FiChevronRight size={20} />
                                                     </button>
                                                 ) : (
                                                     <button
-                                                        type="submit"
+                                                        key="btn-submit"
+                                                        type="button"
+                                                        onClick={submit}
                                                         disabled={processing}
                                                         className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-amber-500/30 transition-all hover:scale-105 disabled:opacity-75 disabled:hover:scale-100"
                                                     >
@@ -847,7 +916,8 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                     </button>
                                                 )}
                                             </div>
-                                        </form>\n                </div>\n
+                                        </form>
+                                    </div>
                                 </div>
                             )}
 
@@ -884,7 +954,7 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                             <td className="px-6 py-4">
                                                                 <span className={cn(
                                                                     "px-3 py-1 text-xs font-bold rounded-full",
-                                                                    sugg.status === 'accepted' ? "bg-emerald-100 text-emerald-700" :
+                                                                    sugg.status === 'accepted' ? "bg-indigo-100 text-indigo-700" :
                                                                         sugg.status === 'rejected' ? "bg-red-100 text-red-700" :
                                                                             "bg-amber-100 text-amber-700"
                                                                 )}>
@@ -894,14 +964,20 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                             <td className="px-6 py-4 text-right space-x-2">
                                                                 {sugg.status === 'pending' && (
                                                                     <>
-                                                                        <button type="button" onClick={() => router.patch(route('suggestions.status', sugg.id), { status: 'accepted' }, { preserveScroll: true })} className="px-3 py-1 bg-emerald-500 text-white rounded text-xs font-bold hover:bg-emerald-600">Accepter</button>
+                                                                        <button type="button" onClick={() => router.patch(route('suggestions.status', sugg.id), { status: 'accepted' }, { preserveScroll: true })} className="px-3 py-1 bg-indigo-500 text-white rounded text-xs font-bold hover:bg-indigo-600">Accepter</button>
                                                                         <button type="button" onClick={() => router.patch(route('suggestions.status', sugg.id), { status: 'rejected' }, { preserveScroll: true })} className="px-3 py-1 bg-red-500 text-white rounded text-xs font-bold hover:bg-red-600">Refuser</button>
                                                                     </>
                                                                 )}
-                                                                {sugg.status === 'accepted' && (
-                                                                    <Link href={route('assignments.create', { client_id: sugg.client_id, profile_id: profile.id })} className="px-3 py-1 bg-indigo-500 text-white rounded text-xs font-bold hover:bg-indigo-600 inline-block">
-                                                                        Créer Contrat
-                                                                    </Link>
+                                                                {(sugg.status === 'accepted' || sugg.status === 'pending') && (
+                                                                    hasActiveContract ? (
+                                                                        <span className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-500 rounded text-xs font-semibold cursor-not-allowed inline-block">
+                                                                            Déjà sous contrat
+                                                                        </span>
+                                                                    ) : (
+                                                                        <Link href={route('assignments.create', { client_id: sugg.client_id, profile_id: profile.id })} className="px-3 py-1 bg-indigo-600 text-white rounded text-xs font-bold hover:bg-indigo-700 inline-block shadow-sm">
+                                                                            Créer Contrat
+                                                                        </Link>
+                                                                    )
                                                                 )}
                                                             </td>
                                                         </tr>
@@ -916,10 +992,17 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                             )}\n\n                            {activeTab === 'Affectation' && (
                                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-gray-800/80">
                                     <div className="p-6 flex justify-between items-center border-b border-gray-100 dark:border-gray-800">
-                                        <h3 className="font-bold text-gray-900 dark:text-white text-lg">Affectations du Profil</h3>
-                                        <Link href={route('assignments.create', { profile_id: profile.id })} className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 px-4 py-2 rounded-xl font-medium transition-colors">
-                                            <FiPlus size={16} /> Nouvelle Affectation
-                                        </Link>
+                                        <div>
+                                            <h3 className="font-bold text-gray-900 dark:text-white text-lg">Affectations du Profil</h3>
+                                            {hasActiveContract && (
+                                                <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Ce candidat a un contrat actif en cours.</p>
+                                            )}
+                                        </div>
+                                        {!hasActiveContract && (
+                                            <Link href={route('assignments.create', { profile_id: profile.id })} className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 px-4 py-2 rounded-xl font-medium transition-colors">
+                                                <FiPlus size={16} /> Nouvelle Affectation
+                                            </Link>
+                                        )}
                                     </div>
                                     <div className="w-full">
                                         <table className="w-full text-left border-collapse">
@@ -937,15 +1020,18 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                     <tr key={assignment.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors group">
                                                         <td className="py-4 px-6">
                                                             <div className="flex items-center gap-2">
-                                                                <span className="font-semibold text-gray-900 dark:text-white">{assignment.client?.c_nom || 'N/A'}</span>
+                                                                <span className="font-semibold text-gray-900 dark:text-white">{assignment.client?.nom || assignment.client?.c_nom || 'N/A'}</span>
                                                             </div>
                                                         </td>
                                                         <td className="py-4 px-6 text-sm">
-                                                            <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${assignment.status === 'completed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' :
+                                                            <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${
+                                                                assignment.status === 'Changement' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300' :
+                                                                assignment.status === 'Nouvelle' || assignment.status === 'Nouvel' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300' :
+                                                                assignment.status === 'completed' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400' :
                                                                 assignment.status === 'cancelled' ? 'bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400' :
-                                                                    'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
-                                                                }`}>
-                                                                {assignment.status || 'active'}
+                                                                'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400'
+                                                            }`}>
+                                                                {assignment.status || 'Actif'}
                                                             </span>
                                                         </td>
                                                         <td className="py-4 px-6 text-sm text-gray-600 dark:text-gray-400">
@@ -966,10 +1052,11 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                                                     <Dropdown.Link href={route('assignments.edit', assignment.id)} className="flex items-center gap-2">
                                                                         <FiEdit2 className="text-gray-400" /> Modifier
                                                                     </Dropdown.Link>
-                                                                    <a href={route('assignments.contract', assignment.id)} target="_blank" className="flex items-center gap-2 text-indigo-600 block w-full px-4 py-2 text-start text-sm leading-5 transition duration-150 ease-in-out hover:bg-gray-100 focus:bg-gray-100 focus:outline-none dark:text-gray-300 dark:hover:bg-gray-800 dark:focus:bg-gray-800">
-                                                                        <FiFileText className="text-indigo-400" /> Générer Contrat
-                                                                    </a>
+                                                                    <Dropdown.Link href={route('assignments.edit', assignment.id)} className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                                                                        <FiFileText className="text-indigo-500" /> Contrat / Workflow
+                                                                    </Dropdown.Link>
                                                                 </Dropdown.Content>
+
                                                             </Dropdown>
                                                         </td>
                                                     </tr>
@@ -986,9 +1073,66 @@ export default function Edit({ profile, projects = [], statuses = PROFILE_STATUS
                                 </div>
                             )}
 
-                            {['Historique', 'Document'].includes(activeTab) && (
+                            {activeTab === 'Historique' && (
                                 <div className="p-12 text-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800/50 rounded-2xl shadow-sm text-gray-500 print:hidden">
-                                    <p className="font-bold">Module {activeTab} en cours de développement</p>
+                                    <p className="font-bold">Module Historique en cours de développement</p>
+                                </div>
+                            )}
+
+                            {activeTab === 'Document' && (
+                                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800/50 rounded-2xl shadow-sm print:hidden p-6 space-y-6">
+                                    <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-4">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Documents & Fichiers</h3>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">Gérez le CV, CIN, passeport et autres documents liés à ce profil.</p>
+                                        </div>
+                                        <button className="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 font-bold rounded-xl text-sm transition-colors flex items-center gap-2">
+                                            <FiPlus /> Ajouter un document
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Mocked Document Cards */}
+                                        <div className="p-4 border border-gray-100 dark:border-gray-800 rounded-xl flex items-start justify-between group hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors bg-gray-50 dark:bg-gray-800/50">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                                                    <FiFileText size={20} />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-900 dark:text-white text-sm">CV_{profile.nom || profile.full_name || 'Candidat'}.pdf</p>
+                                                    <p className="text-xs text-gray-500">Ajouté récemment • 2.4 MB</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button className="p-2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"><FiEye size={14} /></button>
+                                                <button className="p-2 text-gray-500 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-400 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"><FiDownload size={14} /></button>
+                                            </div>
+                                        </div>
+                                        <div className="p-4 border border-gray-100 dark:border-gray-800 rounded-xl flex items-start justify-between group hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors bg-gray-50 dark:bg-gray-800/50">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                                    <FiFile size={20} />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-gray-900 dark:text-white text-sm">CIN_recto_verso.jpg</p>
+                                                    <p className="text-xs text-gray-500">Ajouté récemment • 1.1 MB</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button className="p-2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"><FiEye size={14} /></button>
+                                                <button className="p-2 text-gray-500 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-400 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"><FiDownload size={14} /></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Upload Area */}
+                                    <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-8 text-center hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all cursor-pointer group relative overflow-hidden">
+                                        <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" title="Uploader un fichier" />
+                                        <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform rounded-xl flex items-center justify-center mx-auto mb-4">
+                                            <FiUploadCloud size={24} />
+                                        </div>
+                                        <h4 className="font-bold text-gray-900 dark:text-white mb-1">Cliquez ou glissez-déposez des fichiers ici</h4>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">PDF, JPG, PNG (Max 5MB)</p>
+                                    </div>
                                 </div>
                             )}
                         </div>

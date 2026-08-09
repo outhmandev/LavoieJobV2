@@ -99,6 +99,8 @@ class Profile extends Model implements Auditable
         'niveau',
         'situation_familiale',
         'nombre_enfant',
+        'enfants_details',
+        'c_enfants_details',
         'adresse_cin',
         'ville_origin',
         'current_adresse',
@@ -118,6 +120,7 @@ class Profile extends Model implements Auditable
         'niveau',
         'situation_familiale',
         'nombre_enfant',
+        'enfants_details',
         'adresse_cin',
         'ville_origin',
         'current_adresse',
@@ -131,12 +134,25 @@ class Profile extends Model implements Auditable
     public function getMatAttribute() { return $this->attributes['matricule'] ?? $this->attributes['mat'] ?? null; }
     public function getStatutAttribute() { return $this->attributes['status'] ?? $this->attributes['statut'] ?? null; }
     public function getFileImgAttribute() { return $this->attributes['avatar'] ?? $this->attributes['file_img'] ?? null; }
-    public function getDateNaissanceAttribute() { return $this->attributes['birth_date'] ?? $this->attributes['date_naissance'] ?? null; }
+    public function getDateNaissanceAttribute() {
+        $val = $this->attributes['birth_date'] ?? ($this->attributes['date_naissance'] ?? null);
+        return $val ? substr($val, 0, 10) : null;
+    }
+    public function getBirthDateAttribute($value = null) {
+        $val = $value ?? ($this->attributes['birth_date'] ?? ($this->attributes['date_naissance'] ?? null));
+        return $val ? substr($val, 0, 10) : null;
+    }
+    public function getCinValidityAttribute($value = null) {
+        $val = $value ?? ($this->attributes['cin_validity'] ?? ($this->attributes['cin_v'] ?? null));
+        return $val ? substr($val, 0, 10) : null;
+    }
     public function getVilleOAttribute() { return $this->attributes['birth_city'] ?? $this->attributes['ville_o'] ?? null; }
     public function getNationaliteAttribute() { return $this->attributes['nationality'] ?? $this->attributes['nationalite'] ?? null; }
     public function getNiveauAttribute() { return $this->attributes['education_level'] ?? $this->attributes['niveau'] ?? null; }
     public function getSituationFamilialeAttribute() { return $this->attributes['marital_status'] ?? $this->attributes['situation_familiale'] ?? null; }
-    public function getNombreEnfantAttribute() { return $this->attributes['children_count'] ?? $this->attributes['nombre_enfant'] ?? null; }
+    public function getNombreEnfantAttribute() { return $this->attributes['children_count'] ?? $this->attributes['nombre_enfant'] ?? 0; }
+    public function getEnfantsDetailsAttribute() { return $this->attributes['children_details'] ?? ($this->attributes['enfants_details'] ?? null); }
+    public function getCEnfantsDetailsAttribute() { return $this->attributes['children_details'] ?? ($this->attributes['enfants_details'] ?? null); }
     public function getAdresseCinAttribute() { return $this->attributes['cin_address'] ?? $this->attributes['adresse_cin'] ?? null; }
     public function getVilleOriginAttribute() { return $this->attributes['origin_city'] ?? $this->attributes['ville_origin'] ?? null; }
     public function getCurrentAdresseAttribute() { return $this->attributes['current_address'] ?? $this->attributes['current_adresse'] ?? null; }
@@ -149,12 +165,26 @@ class Profile extends Model implements Auditable
     public function setMatAttribute($value) { $this->attributes['matricule'] = $value; }
     public function setStatutAttribute($value) { $this->attributes['status'] = $value; }
     public function setFileImgAttribute($value) { $this->attributes['avatar'] = $value; }
-    public function setDateNaissanceAttribute($value) { $this->attributes['birth_date'] = $value; }
+    public function setDateNaissanceAttribute($value) {
+        $this->attributes['birth_date'] = (!empty($value)) ? substr($value, 0, 10) : null;
+    }
+    public function setBirthDateAttribute($value) {
+        $this->attributes['birth_date'] = (!empty($value)) ? substr($value, 0, 10) : null;
+    }
+    public function setCinValidityAttribute($value) {
+        $this->attributes['cin_validity'] = (!empty($value)) ? substr($value, 0, 10) : null;
+    }
     public function setVilleOAttribute($value) { $this->attributes['birth_city'] = $value; }
     public function setNationaliteAttribute($value) { $this->attributes['nationality'] = $value; }
     public function setNiveauAttribute($value) { $this->attributes['education_level'] = $value; }
     public function setSituationFamilialeAttribute($value) { $this->attributes['marital_status'] = $value; }
     public function setNombreEnfantAttribute($value) { $this->attributes['children_count'] = $value; }
+    public function setEnfantsDetailsAttribute($value) {
+        $this->attributes['children_details'] = is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : $value;
+    }
+    public function setChildrenDetailsAttribute($value) {
+        $this->attributes['children_details'] = is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : $value;
+    }
     public function setAdresseCinAttribute($value) { $this->attributes['cin_address'] = $value; }
     public function setVilleOriginAttribute($value) { $this->attributes['origin_city'] = $value; }
     public function setCurrentAdresseAttribute($value) { $this->attributes['current_address'] = $value; }
@@ -197,7 +227,7 @@ class Profile extends Model implements Auditable
         'criteria' => 'array',
         'has_diseases' => 'boolean',
         'pet_allergies' => 'boolean',
-        'birth_date' => 'date',
-        'cin_validity' => 'date',
+        'birth_date' => 'date:Y-m-d',
+        'cin_validity' => 'date:Y-m-d',
     ];
 }

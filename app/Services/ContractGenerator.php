@@ -63,7 +63,8 @@ class ContractGenerator
         $isDomicare  = in_array($projectNameUpper, ['DOMICARE', 'DOMI CARE', 'DOMI_CARE'], true);
         
         $guarantee   = $isLallaDomi ? '6' : '3';
-        $reference   = 'LPS/' . str_pad((string) $client->id, 4, '0', STR_PAD_LEFT) . '/' . date('Y');
+        $clientRef   = $client->mat ?: $client->id;
+        $reference   = 'LPS/' . str_pad((string) $clientRef, 4, '0', STR_PAD_LEFT) . '/' . date('Y');
         $statusMap   = ['completed' => 'Terminé', 'cancelled' => 'Annulé'];
         $statusStr   = $statusMap[$assignment->status] ?? 'Actif';
         $today       = date('d/m/Y');
@@ -165,7 +166,7 @@ class ContractGenerator
         $rows = [
             ['Projet Affilié',    $projectName ?: 'Non spécifié'],
             ['Nom complet',       $profile->full_name],
-            ['Matricule',         (string) $profile->id],
+            ['Matricule',         (string) ($profile->matricule ?: $profile->id)],
             ['Nationalité',       $profile->nationality ?? 'Marocaine'],
             ['CIN / Validité',    $profile->cin . '  ·  valable jusqu\'au ' . $cinV],
             ['Date de naissance', $birth . '  ·  ' . ($profile->birth_city ?? 'N/A')],

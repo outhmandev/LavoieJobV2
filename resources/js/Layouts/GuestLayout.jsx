@@ -1,13 +1,19 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
+import ThemeToggle from '@/Components/ThemeToggle';
 import { Link } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 
 export default function GuestLayout({ children, sideContent = null }) {
     return (
-        <div className="flex min-h-screen bg-white font-sans selection:bg-indigo-500 selection:text-white">
+        <div className="flex min-h-screen bg-white dark:bg-slate-950 font-sans selection:bg-indigo-500 selection:text-white">
             
             {/* LEFT SIDE - FORM */}
             <div className="flex w-full lg:w-1/3 xl:w-[30%] flex-col items-center justify-center p-8 sm:p-12 relative bg-white dark:bg-slate-950 z-50 shadow-[30px_0_60px_rgba(0,0,0,0.15)]">
+                
+                {/* Theme switch button */}
+                <div className="absolute top-6 right-6 z-20">
+                    <ThemeToggle />
+                </div>
                 
                 <div className="w-full max-w-sm relative z-10 flex flex-col">
                     {/* Logo - Centered right above the form */}

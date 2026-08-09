@@ -42,13 +42,13 @@ export const SPOKEN_LANGUAGES = [
 ];
 
 export const RELIGIONS = [
-    'Agnostic',
-    'Atheiste',
-    'Buddhisme',
-    'Christianisme',
-    'Hinduisme',
     'Islam',
-    'Judaisme',
+    'Christianisme',
+    'Judaïsme',
+    'Bouddhisme',
+    'Hindouisme',
+    'Agnostique',
+    'Athée',
     'Non religieux',
     'Autre',
 ];
@@ -126,3 +126,19 @@ export function getProfileStatusBadgeClass(status) {
 export function getClientStatusBadgeClass(status) {
     return 'text-gray-700 dark:text-gray-300 font-medium';
 }
+
+export const C_MODE_OPTIONS = [
+    "Couchante", "Non Couchante", "Stage", "Plein temps", "Temps partiel", 
+    "Freelance", "CDD", "CDI", "Job Etudiant", "Contrat pro", "Télétravail", 
+    "Mission intérim", "Saisonnier", "Bénévolat", "Consultant", "Volontariat"
+];
+
+export const C_TYPE_CONTRAT_OPTIONS = [
+    "CDI", "CDD", "Intérim", "Anapec", "Apprentissage", "Professionnalisation", 
+    "Temps partiel", "Saisonnier", "Job étudiant", "Free-lance"
+];
+
+export const C_EXPERIENCE_OPTIONS = [
+    "18 - 20 ans", "20 – 25 ans", "26 – 30 ans", "31 – 40 ans", "41 – 50 ans", 
+    "Plus de 50 ans", "Indifférent"
+];

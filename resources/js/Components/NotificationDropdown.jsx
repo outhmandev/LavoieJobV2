@@ -7,7 +7,6 @@ export default function NotificationDropdown() {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
-    const [testSending, setTestSending] = useState(false);
     const dropdownRef = useRef(null);
 
     const fetchNotifications = async () => {
@@ -67,17 +66,6 @@ export default function NotificationDropdown() {
         }
     };
 
-    const sendTestNotification = async () => {
-        try {
-            setTestSending(true);
-            await axios.post(route('notifications.test'));
-            await fetchNotifications();
-        } catch (error) {
-            console.error('Failed to send test notification:', error);
-        } finally {
-            setTestSending(false);
-        }
-    };
 
     const getIcon = (type) => {
         switch (type) {
@@ -120,14 +108,6 @@ export default function NotificationDropdown() {
                             )}
                         </div>
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={sendTestNotification}
-                                disabled={testSending}
-                                className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 flex items-center gap-1 hover:underline disabled:opacity-50"
-                                title="Tester le système de notification"
-                            >
-                                <FiSend size={12} /> Test
-                            </button>
                             {unreadCount > 0 && (
                                 <button
                                     onClick={markAllAsRead}
@@ -149,13 +129,6 @@ export default function NotificationDropdown() {
                                 </div>
                                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Aucune notification</p>
                                 <p className="text-xs text-gray-400 mt-1">Vous recevrez des notifications ici dès qu'il y aura du nouveau.</p>
-                                <button
-                                    onClick={sendTestNotification}
-                                    disabled={testSending}
-                                    className="mt-4 px-3 py-1.5 text-xs font-semibold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 rounded-lg transition-colors inline-flex items-center gap-1.5"
-                                >
-                                    <FiSend size={12} /> Envoyer une notification de test
-                                </button>
                             </div>
                         ) : (
                             notifications.map((item) => {

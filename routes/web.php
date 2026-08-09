@@ -10,6 +10,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+use App\Http\Controllers\AnalyticsController;
+
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -20,22 +22,18 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function (Illuminate\Http\Request $request) {
-    if (strtolower($request->user()->role) === 'client') {
+    if (strtolower($request->user()->role ?? '') === 'client') {
         return redirect()->route('portal.dashboard');
     }
-    
+
     $totalClients = \App\Models\Client::count();
-    $activeProfiles = \App\Models\Profile::where('status', 'active')->count();
+    $activeProfiles = \App\Models\Profile::where('status', 'active')->orWhere('status', 'Disponible')->count();
     $openAssignments = \App\Models\Assignment::where('status', 'active')->count();
-    
-    // Convert honoraire to numeric for sum if needed, or use a query. 
-    // Wait, honoraire is a string in DB, so we might need to be careful.
-    // Let's just use assignment's agreed price, or if it's 0, default to something.
+
     $monthlyRevenue = \App\Models\Assignment::whereMonth('created_at', now()->month)
                                             ->whereYear('created_at', now()->year)
                                             ->sum('agreed_price');
 
-    // Recent activity: let's get the 4 most recently created clients/profiles/assignments
     $recentClients = \App\Models\Client::latest('created_at')->take(4)->get()->map(function($client) {
         $time = $client->created_at ? \Carbon\Carbon::parse($client->created_at)->diffForHumans() : 'Unknown';
         return [
@@ -49,7 +47,6 @@ Route::get('/dashboard', function (Illuminate\Http\Request $request) {
     });
 
     $recentProfiles = \App\Models\Profile::orderBy('id', 'desc')->take(4)->get()->map(function($profile) {
-        // Handle profiles not casting created_at automatically
         $time = $profile->created_at ? \Carbon\Carbon::parse($profile->created_at)->diffForHumans() : 'Unknown';
         return [
             'id' => 'p' . $profile->id,
@@ -78,6 +75,7 @@ Route::get('/dashboard', function (Illuminate\Http\Request $request) {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/api/analytics/data', [AnalyticsController::class, 'apiData'])->name('api.analytics.data');
     Route::get('/api/projects', [ApiProjectController::class, 'index'])->name('api.projects.index');
     
     // CIN Verification Route
@@ -150,20 +148,32 @@ Route::middleware('auth')->group(function () {
     Route::resource('clients', ClientController::class);
     Route::resource('profiles', CandidateProfileController::class);
     Route::resource('assignments', AssignmentController::class);
-    Route::get('/assignments/{assignment}/contract', [App\Http\Controllers\AssignmentController::class, 'generateContract'])->name('assignments.contract');
+    
+    // Contract Request Approval Workflow & Direct Generation Routes
+    Route::post('assignments/{assignment}/direct-contract', [\App\Http\Controllers\ContractRequestController::class, 'directGenerate'])->name('assignments.direct-contract');
+    Route::resource('contract-requests', \App\Http\Controllers\ContractRequestController::class)->only(['index', 'store', 'show']);
+    Route::post('contract-requests/{contract_request}/approve', [\App\Http\Controllers\ContractRequestController::class, 'approve'])->name('contract-requests.approve');
+    Route::post('contract-requests/{contract_request}/reject', [\App\Http\Controllers\ContractRequestController::class, 'reject'])->name('contract-requests.reject');
+    Route::post('contract-requests/{contract_request}/cancel', [\App\Http\Controllers\ContractRequestController::class, 'cancel'])->name('contract-requests.cancel');
+    Route::post('contract-requests/{contract_request}/retry', [\App\Http\Controllers\ContractRequestController::class, 'retry'])->name('contract-requests.retry');
+    Route::get('contract-requests/{contract_request}/download', [\App\Http\Controllers\ContractRequestController::class, 'download'])->name('contract-requests.download');
     
     Route::post('suggestions', [\App\Http\Controllers\SuggestionController::class, 'store'])->name('suggestions.store');
     Route::patch('suggestions/{suggestion}/status', [\App\Http\Controllers\SuggestionController::class, 'updateStatus'])->name('suggestions.status');
 
+
     // Admin Routes
     Route::middleware('can:system_admin')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
         Route::resource('projects', AdminProjectController::class)->except(['create', 'show', 'edit']);
         Route::post('projects/{project}/jobs', [AdminProjectController::class, 'storeJob'])->name('projects.jobs.store');
         Route::delete('projects/{project}/jobs/{job}', [AdminProjectController::class, 'destroyJob'])->name('projects.jobs.destroy');
         Route::post('projects/{project}/missions', [AdminProjectController::class, 'storeMission'])->name('projects.missions.store');
         Route::delete('projects/{project}/missions/{mission}', [AdminProjectController::class, 'destroyMission'])->name('projects.missions.destroy');
         
-        Route::resource('users', \App\Http\Controllers\Admin\UserController::class)->only(['index', 'edit', 'update']);
+        Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
+        Route::post('users/{user}/resend-invitation', [\App\Http\Controllers\Admin\UserController::class, 'resendInvitation'])->name('users.resend-invitation');
+
         Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class)->except(['show']);
         Route::get('audits', [\App\Http\Controllers\Admin\AuditController::class, 'index'])->name('audits.index');
         Route::resource('mail-accounts', \App\Http\Controllers\Admin\MailAccountController::class)->except(['create', 'show', 'edit']);

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('assignments', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('legacy_id')->nullable()->unique();
             $table->foreignId('client_id')->constrained()->cascadeOnDelete();
             $table->foreignId('profile_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
@@ -20,6 +21,9 @@ return new class extends Migration
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->decimal('agreed_price', 10, 2)->nullable();
+            $table->string('payment_schedule')->nullable();
+            $table->string('rest_days')->nullable();
+            $table->string('employment_type')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();
         });

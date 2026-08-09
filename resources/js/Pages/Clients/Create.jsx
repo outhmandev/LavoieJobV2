@@ -4,11 +4,15 @@ import { Head, useForm, Link } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import CinCheckInput from '@/Components/CinCheckInput';
+import ChildrenDetailsEditor from '@/Components/ChildrenDetailsEditor';
+import LanguageSelector from '@/Components/LanguageSelector';
+import DomesticAnimalsSelector from '@/Components/DomesticAnimalsSelector';
+import DynamicSelect from '@/Components/DynamicSelect';
 import { FiArrowLeft, FiSave, FiCheckCircle, FiChevronRight, FiChevronLeft, FiUser, FiMapPin, FiBriefcase, FiHeart } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { CLIENT_STATUSES, RECRUITMENT_SOURCES } from '@/constants';
+import { CLIENT_STATUSES, RECRUITMENT_SOURCES, C_MODE_OPTIONS, C_TYPE_CONTRAT_OPTIONS, C_EXPERIENCE_OPTIONS } from '@/constants';
 
 function cn(...inputs) {
     return twMerge(clsx(inputs));
@@ -17,21 +21,52 @@ function cn(...inputs) {
 const steps = [
     { id: 1, name: 'Identité', icon: FiUser },
     { id: 2, name: 'Contact & Logement', icon: FiMapPin },
-    { id: 3, name: 'Projet', icon: FiBriefcase },
+    { id: 3, name: 'Projet & Critères', icon: FiBriefcase },
     { id: 4, name: 'Médical', icon: FiHeart },
 ];
 
-export default function Create({ projects = [], statuses = CLIENT_STATUSES }) {
+export default function Create({ projects = [], statuses = CLIENT_STATUSES, nextMatricule = 1000 }) {
     const availableStatuses = Array.from(new Set([...(statuses || []), ...CLIENT_STATUSES]));
 
     const { data, setData, post, processing, errors } = useForm({
-        c_nom: '', project_id: '', c_fonction: '', statut: 'Prospect', c_statut: 'Prospect', status: 'Prospect',
-        c_cin: '', c_cin_v: '', c_date_naissance: '', c_nationalite: 'Maroc', c_situation_fam: '',
-        c_gsm1: '', c_gsm2: '', c_ville_o: '', c_ville_a: '', c_adresse_cin: '', c_adresse_act: '',
-        c_logement: '', c_n_enfant: 0, c_enfants_details: '',
-        c_presence_animaux: 'Non', c_nombre_animaux: 0, c_animaux_details: '',
-        mobility: 'Oui', allergies: '', treatment: '', attending_physician: '',
-        c_source: '', c_prix_min: '', c_prix_max: '', c_observation: '',
+        c_nom: '', 
+        mat: nextMatricule || '',
+        c_mat: nextMatricule || '',
+        project_id: '', 
+        c_fonction: '', 
+        statut: 'Prospect', 
+        c_statut: 'Prospect', 
+        status: 'Prospect',
+        c_cin: '', 
+        c_cin_v: '', 
+        c_date_naissance: '', 
+        c_nationalite: 'Maroc', 
+        c_situation_fam: '',
+        c_gsm1: '', 
+        c_gsm2: '', 
+        c_ville_o: '', 
+        c_ville_a: '', 
+        c_adresse_cin: '', 
+        c_adresse_act: '',
+        c_logement: '', 
+        c_n_enfant: 0, 
+        c_enfants_details: '',
+        missions: [],
+        languages: '',
+        mobility: 'Oui',
+        c_presence_animaux: 'Non', 
+        c_nombre_animaux: 0, 
+        c_animaux_details: '',
+        allergies: '', 
+        treatment: '', 
+        attending_physician: '',
+        c_source: '', 
+        c_prix_min: '', 
+        c_prix_max: '', 
+        c_observation: '',
+        c_mode: '',
+        c_type_contrat: '',
+        c_experience: '',
     });
 
     const [currentStep, setCurrentStep] = useState(1);
@@ -42,14 +77,30 @@ export default function Create({ projects = [], statuses = CLIENT_STATUSES }) {
         setData('project_id', pId);
         const proj = projects.find(p => p.id == pId);
         setSelectedProject(proj);
-        setData(prev => ({ ...prev, project_id: pId, c_fonction: '' }));
+        setData(prev => ({ ...prev, project_id: pId, c_fonction: '', missions: [] }));
+    };
+
+    const handleMissionToggle = (missionName) => {
+        const isSelected = (data.missions || []).includes(missionName);
+        if (isSelected) {
+            setData('missions', data.missions.filter(m => m !== missionName));
+        } else {
+            setData('missions', [...(data.missions || []), missionName]);
+        }
     };
 
     const submit = (e) => {
-        e.preventDefault();
-        const payload = { ...data };
-        payload.has_pets = data.c_presence_animaux === 'Oui' ? true : false;
-        post(route('clients.store'), { data: payload });
+        if (e && e.preventDefault) e.preventDefault();
+        if (currentStep !== steps.length) {
+            return;
+        }
+        post(route('clients.store'));
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+        }
     };
 
     const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, steps.length));
@@ -150,7 +201,7 @@ export default function Create({ projects = [], statuses = CLIENT_STATUSES }) {
                 <div className="relative bg-white dark:bg-gray-900  border border-white/20 dark:border-gray-800/50 shadow-xl rounded-[2rem] overflow-hidden">
 
 
-                    <form onSubmit={submit} className="relative z-10">
+                    <form onSubmit={submit} onKeyDown={handleKeyDown} className="relative z-10">
                         {Object.keys(errors).length > 0 && (
                             <div className="mx-8 mt-8 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl">
                                 <p className="text-red-600 dark:text-red-400 font-bold mb-1">Attention, le formulaire contient des erreurs :</p>
@@ -179,6 +230,22 @@ export default function Create({ projects = [], statuses = CLIENT_STATUSES }) {
                                             <div className="md:col-span-2 flex items-center gap-3 mb-2">
                                                 <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg text-indigo-600 dark:text-indigo-400"><FiUser size={20} /></div>
                                                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">Identité Personnelle</h3>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <InputLabel value="Référence / Matricule Client" className="text-gray-600 dark:text-gray-400 font-semibold" />
+                                                    <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200/50 flex items-center gap-1">
+                                                        <FiCheckCircle size={11} /> Auto-généré
+                                                    </span>
+                                                </div>
+                                                <div className="w-full px-4 py-2.5 bg-indigo-50/40 dark:bg-gray-800/80 border border-indigo-200/40 dark:border-gray-700/50 rounded-xl font-mono text-indigo-600 dark:text-indigo-400 font-bold flex items-center justify-between select-none">
+                                                    <span className="flex items-center gap-2">
+                                                        <span className="text-xs text-indigo-500 dark:text-indigo-400 bg-indigo-100/60 dark:bg-indigo-950/60 px-2 py-0.5 rounded font-mono font-semibold">REF</span>
+                                                        <span>{data.c_mat || nextMatricule || 'AUTO'}</span>
+                                                    </span>
+                                                    <span className="text-xs text-gray-400 dark:text-gray-500 font-normal">Génération automatique</span>
+                                                </div>
                                             </div>
 
                                             <div className="space-y-2">
@@ -218,10 +285,18 @@ export default function Create({ projects = [], statuses = CLIENT_STATUSES }) {
                                                 </select>
                                             </div>
 
-                                            <div className="space-y-2">
-                                                <InputLabel value="Nombre d'enfants" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput type="number" value={data.c_n_enfant} onChange={e => setData('c_n_enfant', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" />
-                                            </div>
+                                            <ChildrenDetailsEditor
+                                                count={data.c_n_enfant}
+                                                onCountChange={(val) => {
+                                                    setData(prev => ({ ...prev, c_n_enfant: val, n_enfant: val }));
+                                                }}
+                                                details={data.c_enfants_details}
+                                                onDetailsChange={(val) => {
+                                                    setData(prev => ({ ...prev, c_enfants_details: val, enfants_details: val }));
+                                                }}
+                                                colorScheme="indigo"
+                                                label="Nombre d'enfants"
+                                            />
 
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
@@ -242,16 +317,12 @@ export default function Create({ projects = [], statuses = CLIENT_STATUSES }) {
                                                 </div>
                                                 <div className="space-y-2">
                                                     <InputLabel value="Source" className="text-gray-600 dark:text-gray-400" />
-                                                    <select
-                                                        value={data.c_source}
-                                                        onChange={e => setData('c_source', e.target.value)}
-                                                        className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200/50 dark:border-gray-700/50 rounded-xl text-gray-700 dark:text-gray-300"
-                                                    >
-                                                        <option value="">-- Sélectionnez --</option>
-                                                        {RECRUITMENT_SOURCES.map(src => (
-                                                            <option key={src} value={src}>{src}</option>
-                                                        ))}
-                                                    </select>
+                                                        <DynamicSelect 
+                                                            value={data.c_source} 
+                                                            onChange={val => setData('c_source', val)} 
+                                                            options={RECRUITMENT_SOURCES}
+                                                            className="w-full h-[42px]"
+                                                        />
                                                 </div>
                                             </div>
                                         </div>
@@ -304,30 +375,134 @@ export default function Create({ projects = [], statuses = CLIENT_STATUSES }) {
 
                                     {/* STEP 3 */}
                                     {currentStep === 3 && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
                                             <div className="md:col-span-2 flex items-center gap-3 mb-2">
                                                 <div className="p-2 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg text-emerald-600 dark:text-emerald-400"><FiBriefcase size={20} /></div>
-                                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Projet & Affectation</h3>
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Projet & Critères Demandés</h3>
+                                                    <p className="text-xs text-gray-500">Sélectionnez le projet, la catégorie du profil et les critères recherchés.</p>
+                                                </div>
                                             </div>
 
                                             <div className="space-y-2">
                                                 <InputLabel value="Projet Associé *" className="text-gray-600 dark:text-gray-400" />
-                                                <select value={data.project_id} onChange={handleProjectChange} className="w-full bg-white dark:bg-gray-800  border-emerald-200/50 dark:border-emerald-700/50 focus:ring-emerald-500/50 rounded-xl text-gray-700 dark:text-gray-300 font-medium h-12 shadow-sm" required>
+                                                <select value={data.project_id} onChange={handleProjectChange} className="w-full bg-white dark:bg-gray-800 border-emerald-200/50 dark:border-emerald-700/50 focus:ring-emerald-500/50 rounded-xl text-gray-700 dark:text-gray-300 font-medium h-12 shadow-sm" required>
                                                     <option value="">-- Sélectionnez un projet --</option>
                                                     {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                                 </select>
                                             </div>
 
                                             <div className="space-y-2">
-                                                <InputLabel value="Type de personnel" className="text-gray-600 dark:text-gray-400" />
-                                                <select value={data.c_fonction} onChange={e => setData('c_fonction', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  border-gray-200/50 dark:border-gray-700/50 rounded-xl text-gray-700 dark:text-gray-300 h-12">
+                                                <InputLabel value="Catégorie du Profil / Type de personnel" className="text-gray-600 dark:text-gray-400" />
+                                                <select value={data.c_fonction} onChange={e => setData('c_fonction', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200/50 dark:border-gray-700/50 rounded-xl text-gray-700 dark:text-gray-300 h-12">
                                                     <option value="">-- Sélectionnez --</option>
                                                     {selectedProject?.jobs?.map(job => <option key={job.id} value={job.name}>{job.name}</option>)}
                                                 </select>
                                                 {!selectedProject && <p className="text-xs text-gray-400 mt-1 italic">Veuillez d'abord sélectionner un projet.</p>}
                                             </div>
 
-                                            <div className="md:col-span-2 p-6 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-700/50 mt-4">
+                                            <div className="space-y-2">
+                                                <InputLabel value="Mode d'emploi" className="text-gray-600 dark:text-gray-400" />
+                                                <DynamicSelect 
+                                                    value={data.c_mode} 
+                                                    onChange={val => setData('c_mode', val)} 
+                                                    options={C_MODE_OPTIONS}
+                                                    className="w-full h-12"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <InputLabel value="Type De Contrat" className="text-gray-600 dark:text-gray-400" />
+                                                <DynamicSelect 
+                                                    value={data.c_type_contrat} 
+                                                    onChange={val => setData('c_type_contrat', val)} 
+                                                    options={C_TYPE_CONTRAT_OPTIONS}
+                                                    className="w-full h-12"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <InputLabel value="Age du profil (ans)" className="text-gray-600 dark:text-gray-400" />
+                                                <DynamicSelect 
+                                                    value={data.c_experience} 
+                                                    onChange={val => setData('c_experience', val)} 
+                                                    options={C_EXPERIENCE_OPTIONS}
+                                                    className="w-full h-12"
+                                                />
+                                            </div>
+
+                                            {/* Dynamic Project Missions & Criteria Selection via Chips */}
+                                            <div className="md:col-span-2 space-y-3">
+                                                <InputLabel value="Critères & Missions demandées pour le profil" className="text-gray-700 dark:text-gray-300 font-bold" />
+                                                {!selectedProject ? (
+                                                    <div className="p-6 text-center text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+                                                        Veuillez sélectionner un projet ci-dessus pour voir les critères et missions disponibles.
+                                                    </div>
+                                                ) : (!selectedProject.grouped_missions || Object.keys(selectedProject.grouped_missions).length === 0) ? (
+                                                    <div className="p-4 text-center text-gray-400 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-gray-200 dark:border-gray-700">
+                                                        Aucun critère spécifique configuré pour ce projet.
+                                                    </div>
+                                                ) : (
+                                                    <div className="grid grid-cols-1 gap-4">
+                                                        {Object.entries(selectedProject.grouped_missions).map(([group, missions]) => (
+                                                            <div key={group} className="bg-white/60 dark:bg-gray-800/40 rounded-2xl p-5 border border-emerald-100 dark:border-emerald-900/30 shadow-sm">
+                                                                <h4 className="font-bold text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-3">{group}</h4>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {missions.map(mission => {
+                                                                        const isSelected = (data.missions || []).includes(mission);
+                                                                        return (
+                                                                            <button
+                                                                                key={mission}
+                                                                                type="button"
+                                                                                onClick={() => handleMissionToggle(mission)}
+                                                                                className={cn(
+                                                                                    "px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border-2 flex items-center gap-1.5",
+                                                                                    isSelected 
+                                                                                        ? "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm" 
+                                                                                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-emerald-300"
+                                                                                )}
+                                                                            >
+                                                                                <span>{isSelected ? '✓' : '+'}</span>
+                                                                                {mission}
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Language Selector */}
+                                            <div className="md:col-span-2">
+                                                <LanguageSelector
+                                                    value={data.languages}
+                                                    onChange={val => setData('languages', val)}
+                                                />
+                                            </div>
+
+                                            {/* Candidate Mobility Preference */}
+                                            <div className="space-y-2">
+                                                <InputLabel value="Mobilité requise du candidat" className="text-gray-600 dark:text-gray-400" />
+                                                <div className="flex gap-4">
+                                                    {['Oui', 'Non'].map(opt => (
+                                                        <div
+                                                            key={opt}
+                                                            onClick={() => setData('mobility', opt)}
+                                                            className={cn(
+                                                                "flex-1 text-center py-2.5 rounded-xl border-2 cursor-pointer transition-all font-semibold",
+                                                                data.mobility === opt ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800"
+                                                            )}
+                                                        >
+                                                            {opt === 'Oui' ? '✓ Mobilité requise' : '✕ Non requise'}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Budget */}
+                                            <div className="md:col-span-2 p-6 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-800/20 rounded-2xl border border-gray-100 dark:border-gray-700/50 mt-2">
                                                 <InputLabel value="Budget Proposé (Dhs)" className="text-gray-700 dark:text-gray-300 font-semibold mb-4" />
                                                 <div className="grid grid-cols-2 gap-6">
                                                     <div className="space-y-2">
@@ -369,35 +544,14 @@ export default function Create({ projects = [], statuses = CLIENT_STATUSES }) {
                                                 </div>
                                             </div>
 
-                                            <div className="p-6 bg-amber-50/50 dark:bg-amber-900/10 rounded-2xl border border-amber-200/50 dark:border-amber-700/30">
-                                                <InputLabel value="Animaux Domestiques" className="text-amber-900 dark:text-amber-400 mb-4" />
-                                                <div className="flex gap-4 mb-4">
-                                                    {['Oui', 'Non'].map(opt => (
-                                                        <div
-                                                            key={opt}
-                                                            onClick={() => setData('c_presence_animaux', opt)}
-                                                            className={cn(
-                                                                "flex-1 text-center py-3 rounded-xl border-2 cursor-pointer transition-all font-semibold",
-                                                                data.c_presence_animaux === opt ? "border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400" : "border-gray-200 dark:border-gray-700 text-gray-500 hover:bg-white dark:hover:bg-gray-800"
-                                                            )}
-                                                        >
-                                                            {opt}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <AnimatePresence>
-                                                    {data.c_presence_animaux === 'Oui' && (
-                                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="grid grid-cols-2 gap-4 overflow-hidden">
-                                                            <div>
-                                                                <TextInput type="number" value={data.c_nombre_animaux} onChange={e => setData('c_nombre_animaux', e.target.value)} className="w-full text-sm bg-white dark:bg-gray-900 rounded-lg" placeholder="Nombre" />
-                                                            </div>
-                                                            <div>
-                                                                <TextInput value={data.c_animaux_details} onChange={e => setData('c_animaux_details', e.target.value)} className="w-full text-sm bg-white dark:bg-gray-900 rounded-lg" placeholder="Ex: 2 Chiens" />
-                                                            </div>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
+                                            <DomesticAnimalsSelector
+                                                hasAnimals={data.c_presence_animaux}
+                                                onHasAnimalsChange={val => setData('c_presence_animaux', val)}
+                                                count={data.c_nombre_animaux}
+                                                onCountChange={val => setData('c_nombre_animaux', val)}
+                                                details={data.c_animaux_details}
+                                                onDetailsChange={val => setData('c_animaux_details', val)}
+                                            />
 
                                             <div className="space-y-2">
                                                 <InputLabel value="Allergies connues" className="text-gray-600 dark:text-gray-400" />
@@ -439,6 +593,7 @@ export default function Create({ projects = [], statuses = CLIENT_STATUSES }) {
 
                             {currentStep < steps.length ? (
                                 <button
+                                    key="btn-next"
                                     type="button"
                                     onClick={() => navigateStep(currentStep + 1)}
                                     className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all hover:scale-105"
@@ -447,7 +602,9 @@ export default function Create({ projects = [], statuses = CLIENT_STATUSES }) {
                                 </button>
                             ) : (
                                 <button
-                                    type="submit"
+                                    key="btn-submit"
+                                    type="button"
+                                    onClick={submit}
                                     disabled={processing}
                                     className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-emerald-500/30 transition-all hover:scale-105 disabled:opacity-75 disabled:hover:scale-100"
                                 >

@@ -24,11 +24,20 @@ class User extends Authenticatable implements Auditable
         'name',
         'email',
         'password',
+        'role',
+        'status',
+        'invitation_token',
+        'invitation_expires_at',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_confirmed_at',
         'last_seen_at',
     ];
 
+
     protected $appends = [
         'is_online',
+        'two_factor_enabled',
     ];
 
     /**
@@ -39,6 +48,8 @@ class User extends Authenticatable implements Auditable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -52,7 +63,25 @@ class User extends Authenticatable implements Auditable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'last_seen_at' => 'datetime',
+            'invitation_expires_at' => 'datetime',
+            'two_factor_confirmed_at' => 'datetime',
+            'two_factor_recovery_codes' => 'array',
         ];
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return !is_null($this->two_factor_confirmed_at) && !is_null($this->two_factor_secret);
+    }
+
+    public function getTwoFactorEnabledAttribute(): bool
+    {
+        return $this->hasTwoFactorEnabled();
+    }
+
+    public function hasPendingInvitation(): bool
+    {
+        return !is_null($this->invitation_token) && ($this->status === 'pending');
     }
 
     public function projects()
@@ -89,4 +118,34 @@ class User extends Authenticatable implements Auditable
     {
         return $this->isOnline();
     }
+
+    public function contractRequests()
+    {
+        return $this->hasMany(ContractRequest::class, 'requested_by');
+    }
+
+    public function approvedContractRequests()
+    {
+        return $this->hasMany(ContractRequest::class, 'approved_by');
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole(['System Administrator', 'Super Admin', 'super Admin'])
+            || in_array(strtolower($this->role ?? ''), ['system administrator', 'super admin', 'superadmin']);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->isSuperAdmin()
+            || $this->hasRole(['Admin', 'admin'])
+            || in_array(strtolower($this->role ?? ''), ['admin']);
+    }
+
+    public function isMember(): bool
+    {
+        return $this->hasRole(['Membre', 'Member', 'membre', 'member'])
+            || in_array(strtolower($this->role ?? ''), ['membre', 'member']);
+    }
 }
+

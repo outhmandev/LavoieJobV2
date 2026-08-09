@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Assignment;
 use App\Models\Client;
 use App\Models\Profile;
 use App\Http\Requests\ClientRequest;
@@ -26,12 +27,12 @@ class ClientController extends Controller
         $query->when($request->filled('project_id'), function($q) use ($request) {
             $q->where('project_id', $request->project_id);
         })
+        ->when($request->filled('cin'), function($q) use ($request) {
+            $q->where('cin', 'like', '%' . trim($request->cin) . '%');
+        })
         ->when($request->filled('reference'), function($q) use ($request) {
-            $subQ = $request->reference;
-            $q->where(function($sq) use ($subQ) {
-                $sq->where('id', $subQ)
-                   ->orWhere('mat', 'like', '%' . $subQ . '%');
-            });
+            $val = trim($request->reference);
+            $q->where('mat', $val);
         })
         ->when($request->filled('nom'), function($q) use ($request) {
             $q->where('nom', 'like', '%' . $request->nom . '%');
@@ -66,7 +67,7 @@ class ClientController extends Controller
 
         return Inertia::render('Clients/Index', [
             'clients' => $clients,
-            'filters' => $request->only(['project_id', 'reference', 'nom', 'ville', 'statut', 'membre']),
+            'filters' => $request->only(['project_id', 'cin', 'reference', 'nom', 'ville', 'statut', 'membre']),
             'options' => [
                 'projects' => $projects,
                 'membres' => $membres,
@@ -84,6 +85,7 @@ class ClientController extends Controller
         return Inertia::render('Clients/Create', [
             'projects' => $projects,
             'statuses' => Client::STATUSES,
+            'nextMatricule' => Client::generateNextMatricule(),
         ]);
     }
 
@@ -99,8 +101,19 @@ class ClientController extends Controller
             }
         }
 
+        $data['user_id'] = $data['user_id'] ?? auth()->id();
+        if (empty($data['mat']) || (int)$data['mat'] === 0) {
+            $data['mat'] = Client::generateNextMatricule();
+        }
+        if (empty($data['m_mat']) || (int)$data['m_mat'] === 0) {
+            $data['m_mat'] = $data['mat'];
+        }
+        if (empty($data['inscription_date'])) {
+            $data['inscription_date'] = now();
+        }
+
         Client::create($data);
-        return redirect()->route('clients.index')->with('success', 'Client created successfully.');
+        return redirect()->route('clients.index')->with('success', 'Client créé avec succès.');
     }
 
     public function show(Client $client)
@@ -118,7 +131,13 @@ class ClientController extends Controller
             ? \App\Models\Project::with(['jobs', 'missions'])->get() 
             : $user->projects()->with(['jobs', 'missions'])->get();
 
-        // Optimized: only select lightweight candidate profiles for suggestions
+        // Profiles currently in an active contract/assignment
+        $assignedProfileIds = Assignment::whereIn('status', ['active', 'Nouvelle', 'Nouvel', 'Changement'])
+            ->pluck('profile_id')
+            ->unique()
+            ->toArray();
+
+        // Optimized: only select available candidate profiles not currently in contract
         $profiles = Profile::select([
             'id', 'full_name', 'avatar', 'education_specialty', 'rate',
             'birth_date', 'current_city', 'experience_years', 'mobility',
@@ -129,6 +148,7 @@ class ClientController extends Controller
               ->orWhere('status', 'dISPONIBE')
               ->orWhereNull('status');
         })
+        ->whereNotIn('id', $assignedProfileIds)
         ->orderByDesc('id')
         ->limit(30)
         ->get();
@@ -137,6 +157,7 @@ class ClientController extends Controller
             'client' => $client,
             'projects' => $projects,
             'profiles' => $profiles,
+            'assignedProfileIds' => $assignedProfileIds,
             'statuses' => Client::STATUSES,
         ]);
     }
@@ -146,20 +167,37 @@ class ClientController extends Controller
         $data = $request->validated();
         
         // Ensure Membre cannot assign to a project they don't own
-        if (!auth()->user()->hasRole('System Administrator')) {
+        if (!auth()->user()->hasRole(['System Administrator', 'Super Admin', 'Admin'])) {
             $allowedProjectIds = auth()->user()->projects()->pluck('projects.id')->toArray();
             if (!in_array($data['project_id'], $allowedProjectIds)) {
-                abort(403, 'Unauthorized project selection.');
+                abort(403, 'Sélection de projet non autorisée.');
             }
         }
 
+        if (empty($data['mat']) || (int)$data['mat'] === 0) {
+            $data['mat'] = $client->mat ?: Client::generateNextMatricule();
+        }
+        if (empty($data['m_mat']) || (int)$data['m_mat'] === 0) {
+            $data['m_mat'] = $client->m_mat ?: $data['mat'];
+        }
+
+        $data['edit_date'] = now();
+
         $client->update($data);
-        return redirect()->route('clients.index')->with('success', 'Client updated successfully.');
+        return redirect()->route('clients.index')->with('success', 'Client mis à jour avec succès.');
     }
 
     public function destroy(Client $client)
     {
+        $user = auth()->user();
+        if (!$user->hasRole(['System Administrator', 'Super Admin', 'Admin'])) {
+            $allowedProjectIds = $user->projects()->pluck('projects.id')->toArray();
+            if ($client->project_id && !in_array($client->project_id, $allowedProjectIds)) {
+                abort(403, 'Action non autorisée.');
+            }
+        }
+
         $client->delete();
-        return redirect()->route('clients.index')->with('success', 'Client deleted successfully.');
+        return redirect()->route('clients.index')->with('success', 'Client supprimé avec succès.');
     }
 }

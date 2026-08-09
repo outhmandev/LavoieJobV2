@@ -25,15 +25,23 @@ class CandidateProfileController extends Controller
         $query->when($request->filled('project_id'), function($q) use ($request) {
             $q->where('project_id', $request->project_id);
         })
+        ->when($request->filled('cin'), function($q) use ($request) {
+            $q->where('cin', 'like', '%' . trim($request->cin) . '%');
+        })
+        ->when($request->filled('matricule'), function($q) use ($request) {
+            $val = trim($request->matricule);
+            $q->where('matricule', $val);
+        })
         ->when($request->filled('reference'), function($q) use ($request) {
-            $q->where(function($subQ) use ($request) {
-                $subQ->where('id', $request->reference)
-                     ->orWhere('matricule', 'like', '%' . $request->reference . '%')
-                     ->orWhere('cin', 'like', '%' . $request->reference . '%');
-            });
+            $val = trim($request->reference);
+            $q->where('matricule', $val);
         })
         ->when($request->filled('nom'), function($q) use ($request) {
-            $q->where('full_name', 'like', '%' . $request->nom . '%');
+            $q->where(function($subQ) use ($request) {
+                $subQ->where('full_name', 'like', '%' . $request->nom . '%')
+                     ->orWhere('first_name', 'like', '%' . $request->nom . '%')
+                     ->orWhere('last_name', 'like', '%' . $request->nom . '%');
+            });
         })
         ->when($request->filled('ville'), function($q) use ($request) {
             $q->where('current_city', 'like', '%' . $request->ville . '%')
@@ -61,7 +69,7 @@ class CandidateProfileController extends Controller
 
         return Inertia::render('Profiles/Index', [
             'profiles' => $profiles,
-            'filters' => $request->only(['project_id', 'reference', 'nom', 'ville', 'statut']),
+            'filters' => $request->only(['project_id', 'cin', 'matricule', 'reference', 'nom', 'ville', 'statut']),
             'options' => [
                 'projects' => $projects,
                 'statuses' => $statuses
@@ -71,7 +79,7 @@ class CandidateProfileController extends Controller
 
     public function create()
     {
-        $projects = auth()->user()->hasRole('System Administrator') 
+        $projects = auth()->user()->hasRole(['System Administrator', 'Super Admin', 'Admin']) 
             ? \App\Models\Project::with(['jobs', 'missions'])->get() 
             : auth()->user()->projects()->with(['jobs', 'missions'])->get();
 
@@ -87,7 +95,7 @@ class CandidateProfileController extends Controller
         $data = $request->validated();
         
         // Ensure Membre cannot assign to a project they don't own
-        if (!auth()->user()->hasRole('System Administrator')) {
+        if (!auth()->user()->hasRole(['System Administrator', 'Super Admin', 'Admin'])) {
             $allowedProjectIds = auth()->user()->projects()->pluck('projects.id')->toArray();
             if (!in_array($data['project_id'], $allowedProjectIds)) {
                 abort(403, 'Unauthorized project selection.');
@@ -106,6 +114,7 @@ class CandidateProfileController extends Controller
             'education_level' => $data['education_level'] ?? $data['niveau'] ?? null,
             'marital_status' => $data['marital_status'] ?? $data['situation_familiale'] ?? null,
             'children_count' => $data['children_count'] ?? $data['nombre_enfant'] ?? 0,
+            'children_details' => $data['children_details'] ?? $data['enfants_details'] ?? null,
             'cin_address' => $data['cin_address'] ?? $data['adresse_cin'] ?? null,
             'origin_city' => $data['origin_city'] ?? $data['ville_origin'] ?? null,
             'current_address' => $data['current_address'] ?? $data['current_adresse'] ?? null,
@@ -134,10 +143,10 @@ class CandidateProfileController extends Controller
             'salary_period' => $data['salary_period'] ?? 'Mensuel',
         ];
         unset($data['mode_emploi'], $data['type_contrat'], $data['repos'], $data['missions'], $data['salary_period']);
-        unset($data['nom'], $data['mat'], $data['statut'], $data['file_img'], $data['date_naissance'], $data['ville_o'], $data['nationalite'], $data['niveau'], $data['situation_familiale'], $data['nombre_enfant'], $data['adresse_cin'], $data['ville_origin'], $data['current_adresse'], $data['gsm1'], $data['gsm2'], $data['gsm_1'], $data['gsm_2'], $data['fonction']);
+        unset($data['nom'], $data['mat'], $data['statut'], $data['file_img'], $data['date_naissance'], $data['ville_o'], $data['nationalite'], $data['niveau'], $data['situation_familiale'], $data['nombre_enfant'], $data['enfants_details'], $data['adresse_cin'], $data['ville_origin'], $data['current_adresse'], $data['gsm1'], $data['gsm2'], $data['gsm_1'], $data['gsm_2'], $data['fonction']);
 
         Profile::create($data);
-        return redirect()->route('profiles.index')->with('success', 'Profile created successfully.');
+        return redirect()->route('profiles.index')->with('success', 'Profil créé avec succès.');
     }
 
     public function show(Profile $profile)
@@ -150,13 +159,18 @@ class CandidateProfileController extends Controller
     public function edit(Profile $profile)
     {
         $profile->load(['assignments.client', 'suggestions.client', 'suggestions.user']);
-        $projects = auth()->user()->hasRole('System Administrator') 
+        $projects = auth()->user()->hasRole(['System Administrator', 'Super Admin', 'Admin']) 
             ? \App\Models\Project::with(['jobs', 'missions'])->get() 
             : auth()->user()->projects()->with(['jobs', 'missions'])->get();
+
+        $hasActiveContract = $profile->assignments->contains(function ($a) {
+            return in_array($a->status, ['active', 'Nouvelle', 'Nouvel', 'Changement']);
+        });
 
         return Inertia::render('Profiles/Edit', [
             'profile' => $profile,
             'projects' => $projects,
+            'hasActiveContract' => $hasActiveContract,
             'statuses' => Profile::STATUSES,
         ]);
     }
@@ -166,10 +180,10 @@ class CandidateProfileController extends Controller
         $data = $request->validated();
         
         // Ensure Membre cannot assign to a project they don't own
-        if (!auth()->user()->hasRole('System Administrator')) {
+        if (!auth()->user()->hasRole(['System Administrator', 'Super Admin', 'Admin'])) {
             $allowedProjectIds = auth()->user()->projects()->pluck('projects.id')->toArray();
             if (!in_array($data['project_id'], $allowedProjectIds)) {
-                abort(403, 'Unauthorized project selection.');
+                abort(403, 'Sélection de projet non autorisée.');
             }
         }
 
@@ -185,6 +199,7 @@ class CandidateProfileController extends Controller
             'education_level' => $data['education_level'] ?? $data['niveau'] ?? null,
             'marital_status' => $data['marital_status'] ?? $data['situation_familiale'] ?? null,
             'children_count' => $data['children_count'] ?? $data['nombre_enfant'] ?? 0,
+            'children_details' => $data['children_details'] ?? $data['enfants_details'] ?? null,
             'cin_address' => $data['cin_address'] ?? $data['adresse_cin'] ?? null,
             'origin_city' => $data['origin_city'] ?? $data['ville_origin'] ?? null,
             'current_address' => $data['current_address'] ?? $data['current_adresse'] ?? null,
@@ -199,6 +214,10 @@ class CandidateProfileController extends Controller
             }
         }
 
+        if (empty($data['matricule'])) {
+            $data['matricule'] = $profile->matricule ?: Profile::generateNextMatricule();
+        }
+
         $existingCriteria = $profile->criteria ?? [];
         $data['criteria'] = array_merge($existingCriteria, [
             'mode_emploi' => $data['mode_emploi'] ?? ($existingCriteria['mode_emploi'] ?? null),
@@ -208,15 +227,23 @@ class CandidateProfileController extends Controller
             'salary_period' => $data['salary_period'] ?? ($existingCriteria['salary_period'] ?? 'Mensuel'),
         ]);
         unset($data['mode_emploi'], $data['type_contrat'], $data['repos'], $data['missions'], $data['salary_period']);
-        unset($data['nom'], $data['mat'], $data['statut'], $data['file_img'], $data['date_naissance'], $data['ville_o'], $data['nationalite'], $data['niveau'], $data['situation_familiale'], $data['nombre_enfant'], $data['adresse_cin'], $data['ville_origin'], $data['current_adresse'], $data['gsm1'], $data['gsm2'], $data['gsm_1'], $data['gsm_2'], $data['fonction']);
+        unset($data['nom'], $data['mat'], $data['statut'], $data['file_img'], $data['date_naissance'], $data['ville_o'], $data['nationalite'], $data['niveau'], $data['situation_familiale'], $data['nombre_enfant'], $data['enfants_details'], $data['adresse_cin'], $data['ville_origin'], $data['current_adresse'], $data['gsm1'], $data['gsm2'], $data['gsm_1'], $data['gsm_2'], $data['fonction']);
 
         $profile->update($data);
-        return redirect()->route('profiles.index')->with('success', 'Profile updated successfully.');
+        return redirect()->route('profiles.index')->with('success', 'Profil mis à jour avec succès.');
     }
 
     public function destroy(Profile $profile)
     {
+        $user = auth()->user();
+        if (!$user->hasRole(['System Administrator', 'Super Admin', 'Admin'])) {
+            $allowedProjectIds = $user->projects()->pluck('projects.id')->toArray();
+            if ($profile->project_id && !in_array($profile->project_id, $allowedProjectIds)) {
+                abort(403, 'Action non autorisée.');
+            }
+        }
+
         $profile->delete();
-        return redirect()->route('profiles.index')->with('success', 'Profile deleted successfully.');
+        return redirect()->route('profiles.index')->with('success', 'Profil supprimé avec succès.');
     }
 }

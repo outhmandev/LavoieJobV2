@@ -24,6 +24,8 @@ class ProfileRequest extends FormRequest
             'niveau' => 'education_level',
             'situation_familiale' => 'marital_status',
             'nombre_enfant' => 'children_count',
+            'enfants_details' => 'children_details',
+            'c_enfants_details' => 'children_details',
             'adresse_cin' => 'cin_address',
             'ville_origin' => 'origin_city',
             'current_adresse' => 'current_address',
@@ -43,31 +45,56 @@ class ProfileRequest extends FormRequest
             }
         }
 
-        // Convert string representations to boolean / null
+        // Serialize array children_details if array passed
+        if ($this->has('children_details') && is_array($this->input('children_details'))) {
+            $updates['children_details'] = json_encode($this->input('children_details'), JSON_UNESCAPED_UNICODE);
+        } elseif ($this->has('enfants_details') && is_array($this->input('enfants_details'))) {
+            $updates['children_details'] = json_encode($this->input('enfants_details'), JSON_UNESCAPED_UNICODE);
+        }
+
+        // Convert string representations to boolean
         if ($this->has('has_diseases')) {
             $val = $this->input('has_diseases');
-            if (is_string($val)) {
-                $updates['has_diseases'] = strtolower($val) === 'oui';
-            }
+            $updates['has_diseases'] = is_string($val) ? (strtolower(trim($val)) === 'oui' || $val === '1') : (bool)$val;
+        } else {
+            $updates['has_diseases'] = false;
         }
+
         if ($this->has('pet_allergies')) {
             $val = $this->input('pet_allergies');
-            if (is_string($val)) {
-                $updates['pet_allergies'] = strtolower($val) === 'oui';
-            }
+            $updates['pet_allergies'] = is_string($val) ? (strtolower(trim($val)) === 'oui' || $val === '1') : (bool)$val;
+        } else {
+            $updates['pet_allergies'] = false;
         }
 
-        // Clean empty string dates to null
-        foreach (['cin_validity', 'birth_date', 'date_naissance'] as $dateField) {
-            if ($this->has($dateField) && $this->input($dateField) === '') {
+        // Clean empty string dates to null and extract YYYY-MM-DD
+        foreach (['cin_validity', 'birth_date', 'date_naissance', 'cin_v'] as $dateField) {
+            $val = $updates[$dateField] ?? $this->input($dateField);
+            if ($val === '' || $val === null) {
                 $updates[$dateField] = null;
+            } elseif (is_string($val)) {
+                $val = trim($val);
+                if (strlen($val) > 10) {
+                    $cleanDate = substr($val, 0, 10);
+                    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $cleanDate)) {
+                        $updates[$dateField] = $cleanDate;
+                    }
+                }
             }
         }
 
-        // Clean empty string numbers to null
-        foreach (['children_count', 'nombre_enfant', 'rate', 'min_price', 'max_price', 'experience_years'] as $numField) {
+        // Clean empty string numbers to null or 0 for NOT NULL columns
+        foreach (['min_price', 'max_price', 'experience_years'] as $numField) {
             if ($this->has($numField) && $this->input($numField) === '') {
                 $updates[$numField] = null;
+            }
+        }
+
+        // NOT NULL integer/decimal columns default to 0
+        foreach (['children_count', 'nombre_enfant', 'rate'] as $intField) {
+            $val = $updates[$intField] ?? $this->input($intField);
+            if ($val === '' || $val === null) {
+                $updates[$intField] = 0;
             }
         }
 

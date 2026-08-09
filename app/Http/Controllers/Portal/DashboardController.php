@@ -16,7 +16,7 @@ class DashboardController extends Controller
 
         if (!$client) {
             // Handle edge case where a user has 'client' role but no associated client record
-            return redirect()->route('dashboard')->with('error', 'No client profile found.');
+            return redirect()->route('dashboard')->with('error', 'Aucun profil client associé trouvé.');
         }
 
         // Onboarding Check

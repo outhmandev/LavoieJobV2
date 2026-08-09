@@ -83,36 +83,36 @@ export default function Index({ projects }) {
                 <div className="flex items-center justify-between">
                     <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
                         <FiSettings className="text-indigo-500" />
-                        System Administrator: Projects & Configuration
+                        Administration Système : Projets & Configuration
                     </h2>
                     <div className="hidden md:flex items-center gap-2 text-sm font-medium text-indigo-600 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-2 rounded-full">
-                        <FiCheckCircle size={16} /> Admin Privileges Active
+                        <FiCheckCircle size={16} /> Privilèges Admin Actifs
                     </div>
                 </div>
             }
         >
-            <Head title="Admin - Projects Config" />
+            <Head title="Admin - Configuration des Projets" />
 
             <div className="max-w-7xl mx-auto pb-12 flex flex-col md:flex-row gap-8">
                 
                 {/* Left Sidebar: Projects List */}
                 <div className="w-full md:w-1/3 flex flex-col gap-6">
                     <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Create New Project</h3>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Créer un nouveau projet</h3>
                         <form onSubmit={createProject} className="flex flex-col gap-4">
                             <div>
-                                <InputLabel value="Project Name" />
+                                <InputLabel value="Nom du projet" />
                                 <TextInput value={projectData.name} onChange={e => setProjectData('name', e.target.value)} className="w-full mt-1" required />
                             </div>
                             <button disabled={processingProject} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-xl font-bold transition-all">
-                                + Create Project
+                                + Créer le projet
                             </button>
                         </form>
                     </div>
 
                     <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
                         <div className="p-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                            <h3 className="font-bold text-gray-900 dark:text-white">Existing Projects</h3>
+                            <h3 className="font-bold text-gray-900 dark:text-white">Projets existants</h3>
                         </div>
                         <div className="flex flex-col">
                             {projects.map(project => (
@@ -148,7 +148,7 @@ export default function Index({ projects }) {
                                     <form onSubmit={addJob} className="flex gap-4">
                                         <TextInput placeholder="ex: Auxiliaire de vie" value={jobData.name} onChange={e => setJobData('name', e.target.value)} className="flex-1" required />
                                         <button disabled={processingJob} className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-xl font-bold transition-all flex items-center gap-2">
-                                            <FiPlus /> Add
+                                            <FiPlus /> Ajouter
                                         </button>
                                     </form>
                                 </div>
@@ -180,7 +180,7 @@ export default function Index({ projects }) {
                                         <TextInput placeholder="Groupe (ex: 1️⃣ Soins de base)" value={missionData.group_name} onChange={e => setMissionData('group_name', e.target.value)} className="w-full md:w-1/3" />
                                         <TextInput placeholder="Mission (ex: Aide à la toilette)" value={missionData.name} onChange={e => setMissionData('name', e.target.value)} className="w-full md:w-auto flex-1" required />
                                         <button disabled={processingMission} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2 rounded-xl font-bold transition-all flex items-center justify-center gap-2">
-                                            <FiPlus /> Add
+                                            <FiPlus /> Ajouter
                                         </button>
                                     </form>
                                 </div>
@@ -215,7 +215,7 @@ export default function Index({ projects }) {
                         </div>
                     ) : (
                         <div className="bg-white dark:bg-gray-900 rounded-2xl p-12 text-center shadow-sm border border-gray-100 dark:border-gray-800 text-gray-500">
-                            Select a project from the left to configure its jobs and missions.
+                            Sélectionnez un projet à gauche pour configurer ses types de personnel et missions.
                         </div>
                     )}
                 </div>

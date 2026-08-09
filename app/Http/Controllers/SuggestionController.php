@@ -25,12 +25,12 @@ class SuggestionController extends Controller
             ->first();
 
         if ($existing) {
-            return back()->withErrors(['message' => 'This profile is already suggested to this client and is pending.']);
+            return back()->withErrors(['message' => 'Ce profil a déjà été suggéré à ce client et est en attente.']);
         }
 
         Suggestion::create($validated);
 
-        return back()->with('success', 'Profile successfully suggested to client.');
+        return back()->with('success', 'Profil suggéré au client avec succès.');
     }
 
     public function updateStatus(Request $request, Suggestion $suggestion)
@@ -42,8 +42,8 @@ class SuggestionController extends Controller
         $suggestion->update(['status' => $validated['status']]);
 
         $message = $validated['status'] === 'accepted' 
-            ? 'Suggestion accepted! You can now create a contract for this profile.' 
-            : 'Suggestion rejected.';
+            ? 'Suggestion acceptée ! Vous pouvez maintenant créer une affectation pour ce profil.' 
+            : 'Suggestion refusée.';
 
         return back()->with('success', $message);
     }

@@ -41,6 +41,6 @@ class SuggestionController extends Controller
             'status' => $validated['status']
         ]);
 
-        return back()->with('success', 'Suggestion status updated successfully.');
+        return back()->with('success', 'Statut de la suggestion mis à jour avec succès.');
     }
 }

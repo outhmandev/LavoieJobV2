@@ -31,4 +31,29 @@ class Assignment extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function contractRequests()
+    {
+        return $this->hasMany(ContractRequest::class)->orderBy('created_at', 'desc');
+    }
+
+    public function latestContractRequest()
+    {
+        return $this->hasOne(ContractRequest::class)->latestOfMany();
+    }
+
+    public function activeContractRequest()
+    {
+        return $this->hasOne(ContractRequest::class)
+            ->whereIn('status', [ContractRequest::STATUS_PENDING, ContractRequest::STATUS_APPROVED, ContractRequest::STATUS_GENERATING])
+            ->latestOfMany();
+    }
+
+    public function completedContractRequest()
+    {
+        return $this->hasOne(ContractRequest::class)
+            ->where('status', ContractRequest::STATUS_COMPLETED)
+            ->latestOfMany();
+    }
 }
+

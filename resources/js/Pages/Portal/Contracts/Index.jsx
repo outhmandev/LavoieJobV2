@@ -43,7 +43,7 @@ export default function ContractsIndex({ auth, contracts }) {
                                                             ? 'bg-blue-50 text-blue-700 border-blue-200'
                                                             : 'bg-gray-100 text-gray-700 border-gray-200'
                                                     }`}>
-                                                        {contract.status}
+                                                        {contract.status === 'active' ? 'Actif' : contract.status === 'completed' ? 'Terminé' : contract.status}
                                                     </span>
                                                 </h3>
                                                 
