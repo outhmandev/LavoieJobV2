@@ -23,6 +23,9 @@ class LallaGhaliaMissionsSeeder extends Seeder
             return;
         }
 
+        // Wipe old missions for this project to start fresh
+        ProjectMission::where('project_id', $project->id)->delete();
+
         $missionsData = [
             'Nettoyage et entretien de la maison' => [
                 'Nettoyage quotidien (sols, sanitaires, cuisine, chambres)',

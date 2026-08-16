@@ -21,7 +21,11 @@ class DatabaseSeeder extends Seeder
         );
 
         $this->call([
+            ProjectSeeder::class,
             RoleSeeder::class,
+            LallaGhaliaMissionsSeeder::class,
+            ProProMissionsSeeder::class,
+            SettingsSeeder::class,
         ]);
 
         $user->assignRole('System Administrator');

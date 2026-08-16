@@ -185,6 +185,7 @@ class Client extends Model implements Auditable
         'allergies',
         'treatment',
         'attending_physician',
+        'domicare_data',
     ];
 
     public function getCNomAttribute() { return $this->attributes['nom'] ?? null; }
@@ -262,6 +263,11 @@ class Client extends Model implements Auditable
         $c = json_decode($this->attributes['criteres'] ?? '{}', true);
         return is_array($c) ? ($c['treatment'] ?? '') : '';
     }
+    public function getDomicareDataAttribute() {
+        $c = json_decode($this->attributes['criteres'] ?? '{}', true);
+        return $c['domicare_data'] ?? null;
+    }
+
     public function getAttendingPhysicianAttribute() {
         $c = json_decode($this->attributes['criteres'] ?? '{}', true);
         return is_array($c) ? ($c['attending_physician'] ?? '') : '';

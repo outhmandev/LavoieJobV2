@@ -122,6 +122,10 @@ class ClientRequest extends FormRequest
         if ($this->has('treatment') && $this->input('treatment') !== null) $criteres['treatment'] = $this->input('treatment');
         if ($this->has('attending_physician') && $this->input('attending_physician') !== null) $criteres['attending_physician'] = $this->input('attending_physician');
 
+        if ($this->has('domicare_data') && is_array($this->input('domicare_data'))) {
+            $criteres['domicare_data'] = $this->input('domicare_data');
+        }
+
         if (count($criteres) > 0) {
             $updates['criteres'] = json_encode($criteres, JSON_UNESCAPED_UNICODE);
         }
@@ -190,6 +194,7 @@ class ClientRequest extends FormRequest
             'nombre_animaux' => 'nullable|integer|min:0',
             'animaux_details' => 'nullable|string',
             'blacklist_motif' => 'nullable|string',
+            'domicare_data' => 'nullable|array',
         ];
     }
 }
