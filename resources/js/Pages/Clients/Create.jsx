@@ -20,21 +20,12 @@ function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
 
-
-const standardSteps = [
+const steps = [
     { id: 1, name: 'Identité', icon: FiUser },
     { id: 2, name: 'Contact & Logement', icon: FiMapPin },
     { id: 3, name: 'Projet & Critères', icon: FiBriefcase },
     { id: 4, name: 'Médical', icon: FiHeart },
 ];
-
-const domicareSteps = [
-    { id: 1, name: 'Demandeur', icon: FiUser },
-    { id: 2, name: 'Patient', icon: FiUser },
-    { id: 3, name: 'Médical', icon: FiHeart },
-    { id: 4, name: 'Demande', icon: FiFileText },
-];
-
 
 export default function Create({ projects = [], statuses = [], nextMatricule = 1000 }) {
     const availableStatuses = statuses || [];
@@ -59,41 +50,7 @@ export default function Create({ projects = [], statuses = [], nextMatricule = 1
         c_ville_a: '', 
         c_adresse_cin: '', 
         c_adresse_act: '',
-        c_logement: '',
-        domicare_data: {
-            // Demandeur
-            lien_patient: '',
-            // Patient
-            patient_nom: '',
-            patient_cin: '',
-            patient_assurance: '',
-            patient_age: '',
-            patient_nationalite: 'Marocaine',
-            patient_adresse: '',
-            patient_ville: '',
-            patient_gsm1: '',
-            patient_gsm2: '',
-            patient_situation_mat: '',
-            patient_situation_vie: '',
-            patient_profil: '',
-            patient_autonomie: '',
-            // Medical
-            conscience: '',
-            respiration: '',
-            fatigue: 'Non',
-            douleur: 'Non',
-            etat_psy: '',
-            memoire: '',
-            etat_cutane: '',
-            continence: '',
-            nutrition: '',
-            // Demande
-            motif_appel: '',
-            ambulance: 'Non',
-            autres_besoins: '',
-            profil_recherche: '',
-            urgence: '',
-        }, 
+        c_logement: '', 
         c_n_enfant: 0, 
         c_enfants_details: '',
         missions: [],
@@ -116,8 +73,6 @@ export default function Create({ projects = [], statuses = [], nextMatricule = 1
     });
 
     const [currentStep, setCurrentStep] = useState(1);
-    const isDomicare = selectedProject?.name === "DOMICARE";
-    const steps = isDomicare ? domicareSteps : standardSteps;
     const [selectedProject, setSelectedProject] = useState(null);
 
     const handleProjectChange = (e) => {
@@ -202,36 +157,6 @@ export default function Create({ projects = [], statuses = [], nextMatricule = 1
 
             <div className="max-w-6xl mx-auto pb-20 pt-8">
 
-                
-                {/* Project Selection (Global) */}
-                <div className="bg-white dark:bg-gray-900 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-6 mb-8 shadow-sm flex flex-col md:flex-row items-center gap-6 z-20 relative">
-                    <div className="p-4 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                        <FiBriefcase size={24} />
-                    </div>
-                    <div className="flex-1 w-full space-y-2">
-                        <InputLabel value="Projet Associé (Requis pour commencer)" className="text-gray-700 dark:text-gray-300 font-bold text-lg" />
-                        <select 
-                            value={data.project_id} 
-                            onChange={handleProjectChange} 
-                            className="w-full bg-gray-50 dark:bg-gray-800 border-emerald-300 dark:border-emerald-700 focus:ring-emerald-500 rounded-xl text-gray-800 dark:text-gray-200 font-medium h-14 shadow-sm text-lg" 
-                            required
-                        >
-                            <option value="">-- Sélectionnez d'abord un projet --</option>
-                            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                        </select>
-                    </div>
-                </div>
-
-                {!selectedProject && (
-                    <div className="text-center p-12 bg-white/50 dark:bg-gray-900/50 rounded-2xl border border-gray-200 dark:border-gray-800 backdrop-blur-sm">
-                        <FiBriefcase size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-                        <h3 className="text-xl font-bold text-gray-500 dark:text-gray-400">Veuillez sélectionner un projet pour commencer.</h3>
-                    </div>
-                )}
-
-                {selectedProject && (
-                    <>
-
                 {/* Stepper Header */}
                 <div className="mb-10 relative">
                     <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 dark:bg-gray-800 rounded-full -z-10 transform -translate-y-1/2"></div>
@@ -302,274 +227,185 @@ export default function Create({ projects = [], statuses = [], nextMatricule = 1
                                     exit="exit"
                                     transition={{ duration: 0.2 }}
                                 >
-                                    
-                                    {/* DOMICARE - STEP 1 : Demandeur */}
-                                    {isDomicare && currentStep === 1 && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <div className="md:col-span-2 flex items-center gap-3 mb-2">
-                                                <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg text-indigo-600 dark:text-indigo-400"><FiUser size={20} /></div>
-                                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Informations Demandeur</h3>
-                                            </div>
-                                            
-                                            <div className="space-y-2">
-                                                <InputLabel value="Nom et prénom *" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.c_nom} onChange={e => setData('c_nom', e.target.value)} className="w-full" required />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="Lien avec le patient" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.domicare_data.lien_patient} onChange={e => setData('domicare_data', {...data.domicare_data, lien_patient: e.target.value})} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="Statut (Demandeur)" className="text-gray-600 dark:text-gray-400" />
-                                                <select value={data.statut} onChange={e => {setData('statut', e.target.value); setData('status', e.target.value); setData('c_statut', e.target.value);}} className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200/50 dark:border-gray-700/50 rounded-xl text-gray-700 dark:text-gray-300">
-                                                    {availableStatuses.map(st => <option key={st} value={st}>{st}</option>)}
-                                                </select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="CIN ou Pass" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.c_cin} onChange={e => setData('c_cin', e.target.value)} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="Adresse actuelle" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.c_adresse_act} onChange={e => setData('c_adresse_act', e.target.value)} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="Mail" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput type="email" value={data.c_email} onChange={e => setData('c_email', e.target.value)} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="GSM 1 *" className="text-gray-600 dark:text-gray-400 font-bold" />
-                                                <TextInput value={data.c_gsm1} onChange={e => setData('c_gsm1', e.target.value)} className="w-full" required />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="GSM 2 (si possible)" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.c_gsm2} onChange={e => setData('c_gsm2', e.target.value)} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2 md:col-span-2">
-                                                <InputLabel value="Source" className="text-gray-600 dark:text-gray-400" />
-                                                <DynamicSelect value={data.c_source} onChange={val => setData('c_source', val)} options={RECRUITMENT_SOURCES} className="w-full h-[42px]" />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* DOMICARE - STEP 2 : Patient */}
-                                    {isDomicare && currentStep === 2 && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="md:col-span-2 flex items-center gap-3 mb-2">
-                                                <div className="p-2 bg-blue-100 dark:bg-blue-500/20 rounded-lg text-blue-600 dark:text-blue-400"><FiUser size={20} /></div>
-                                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Informations Patient</h3>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <InputLabel value="Nom et prénom du patient" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.domicare_data.patient_nom} onChange={e => setData('domicare_data', {...data.domicare_data, patient_nom: e.target.value})} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="CIN / PAS" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.domicare_data.patient_cin} onChange={e => setData('domicare_data', {...data.domicare_data, patient_cin: e.target.value})} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2 md:col-span-2 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                                                <InputLabel value="Affiliation à un régime d'assurance obligatoire" className="text-gray-600 dark:text-gray-400 mb-2 font-bold" />
-                                                <div className="flex flex-wrap gap-4">
-                                                    {['CNOPS', 'CNSS', 'AMO', 'Non'].map(opt => (
-                                                        <label key={opt} className="flex items-center gap-2 cursor-pointer p-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                                                            <input type="radio" name="assurance" value={opt} checked={data.domicare_data.patient_assurance === opt} onChange={e => setData('domicare_data', {...data.domicare_data, patient_assurance: e.target.value})} className="text-indigo-600 focus:ring-indigo-500" />
-                                                            <span className="text-gray-700 dark:text-gray-300 font-medium">{opt}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="Âge" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.domicare_data.patient_age} onChange={e => setData('domicare_data', {...data.domicare_data, patient_age: e.target.value})} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="Nationalité" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.domicare_data.patient_nationalite} onChange={e => setData('domicare_data', {...data.domicare_data, patient_nationalite: e.target.value})} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="Adresse actuelle" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.domicare_data.patient_adresse} onChange={e => setData('domicare_data', {...data.domicare_data, patient_adresse: e.target.value})} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="Ville" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.domicare_data.patient_ville} onChange={e => setData('domicare_data', {...data.domicare_data, patient_ville: e.target.value})} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="GSM 1 (Patient)" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.domicare_data.patient_gsm1} onChange={e => setData('domicare_data', {...data.domicare_data, patient_gsm1: e.target.value})} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="GSM 2 (Patient)" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.domicare_data.patient_gsm2} onChange={e => setData('domicare_data', {...data.domicare_data, patient_gsm2: e.target.value})} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="Situation matrimoniale" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.domicare_data.patient_situation_mat} onChange={e => setData('domicare_data', {...data.domicare_data, patient_situation_mat: e.target.value})} className="w-full" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="Situation de vie" className="text-gray-600 dark:text-gray-400" />
-                                                <select value={data.domicare_data.patient_situation_vie} onChange={e => setData('domicare_data', {...data.domicare_data, patient_situation_vie: e.target.value})} className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200/50 dark:border-gray-700/50 rounded-xl text-gray-700 dark:text-gray-300">
-                                                    <option value="">-- Sélectionnez --</option>
-                                                    <option value="Vit seul(e)">Vit seul(e)</option>
-                                                    <option value="Vit avec la famille">Vit avec la famille</option>
-                                                    <option value="Autre">Autre (à préciser dans observation)</option>
-                                                </select>
-                                            </div>
-                                            <div className="space-y-2 md:col-span-2">
-                                                <InputLabel value="Profil du patient" className="text-gray-600 dark:text-gray-400 font-bold" />
-                                                <div className="flex flex-wrap gap-3">
-                                                    {['Personne âgée', 'Opéré', 'Malade chronique', 'Porteur prothèse/plâtre', 'Autre'].map(opt => (
-                                                        <label key={opt} className="flex items-center gap-2 p-2 px-3 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-                                                            <input type="radio" name="profil_pat" value={opt} checked={data.domicare_data.patient_profil === opt} onChange={e => setData('domicare_data', {...data.domicare_data, patient_profil: e.target.value})} className="text-indigo-600" />
-                                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{opt}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2 md:col-span-2">
-                                                <InputLabel value="Autonomie du patient" className="text-gray-600 dark:text-gray-400 font-bold" />
-                                                <div className="flex flex-wrap gap-3">
-                                                    {['Totalement dépendant (Alité)', 'Semi-autonome', 'Autonome'].map(opt => (
-                                                        <label key={opt} className="flex items-center gap-2 p-3 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex-1 justify-center">
-                                                            <input type="radio" name="autonomie" value={opt} checked={data.domicare_data.patient_autonomie === opt} onChange={e => setData('domicare_data', {...data.domicare_data, patient_autonomie: e.target.value})} className="text-emerald-600" />
-                                                            <span className="font-semibold text-gray-700 dark:text-gray-300">{opt}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* DOMICARE - STEP 3 : Médical */}
-                                    {isDomicare && currentStep === 3 && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="md:col-span-2 flex items-center gap-3 mb-2">
-                                                <div className="p-2 bg-rose-100 dark:bg-rose-500/20 rounded-lg text-rose-600 dark:text-rose-400"><FiHeart size={20} /></div>
-                                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Informations Médicales (Patient)</h3>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="Allergie" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.allergies} onChange={e => setData('allergies', e.target.value)} className="w-full" placeholder="Précisez si oui..." />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <InputLabel value="Médecin traitant" className="text-gray-600 dark:text-gray-400" />
-                                                <TextInput value={data.attending_physician} onChange={e => setData('attending_physician', e.target.value)} className="w-full" />
-                                            </div>
-                                            
-                                            <div className="md:col-span-2 mt-4 p-4 bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 rounded-xl">
-                                                <h4 className="font-bold text-gray-700 dark:text-gray-300 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">L'évaluation de l'état du bénéficiaire</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div className="space-y-2">
-                                                        <InputLabel value="Conscience" className="text-gray-600 dark:text-gray-400" />
-                                                        <TextInput value={data.domicare_data.conscience} onChange={e => setData('domicare_data', {...data.domicare_data, conscience: e.target.value})} className="w-full" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <InputLabel value="Respiration" className="text-gray-600 dark:text-gray-400" />
-                                                        <TextInput value={data.domicare_data.respiration} onChange={e => setData('domicare_data', {...data.domicare_data, respiration: e.target.value})} className="w-full" />
-                                                    </div>
-                                                    
-                                                    <div className="space-y-2">
-                                                        <InputLabel value="Fatigue" className="text-gray-600 dark:text-gray-400" />
-                                                        <select value={data.domicare_data.fatigue} onChange={e => setData('domicare_data', {...data.domicare_data, fatigue: e.target.value})} className="w-full bg-white dark:bg-gray-800 rounded-lg">
-                                                            <option value="Non">Non</option><option value="Oui">Oui</option>
-                                                        </select>
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <InputLabel value="Douleur" className="text-gray-600 dark:text-gray-400" />
-                                                        <select value={data.domicare_data.douleur} onChange={e => setData('domicare_data', {...data.domicare_data, douleur: e.target.value})} className="w-full bg-white dark:bg-gray-800 rounded-lg">
-                                                            <option value="Non">Non</option><option value="Oui">Oui</option>
-                                                        </select>
-                                                    </div>
-
-                                                    <div className="space-y-2">
-                                                        <InputLabel value="État psychologique" className="text-gray-600 dark:text-gray-400" />
-                                                        <TextInput value={data.domicare_data.etat_psy} onChange={e => setData('domicare_data', {...data.domicare_data, etat_psy: e.target.value})} className="w-full" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <InputLabel value="Mémoire" className="text-gray-600 dark:text-gray-400" />
-                                                        <TextInput value={data.domicare_data.memoire} onChange={e => setData('domicare_data', {...data.domicare_data, memoire: e.target.value})} className="w-full" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <InputLabel value="Etat cutanée" className="text-gray-600 dark:text-gray-400" />
-                                                        <TextInput value={data.domicare_data.etat_cutane} onChange={e => setData('domicare_data', {...data.domicare_data, etat_cutane: e.target.value})} className="w-full" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <InputLabel value="Continence" className="text-gray-600 dark:text-gray-400" />
-                                                        <TextInput value={data.domicare_data.continence} onChange={e => setData('domicare_data', {...data.domicare_data, continence: e.target.value})} className="w-full" />
-                                                    </div>
-                                                    <div className="space-y-2 md:col-span-2">
-                                                        <InputLabel value="Nutrition et hydratation" className="text-gray-600 dark:text-gray-400" />
-                                                        <TextInput value={data.domicare_data.nutrition} onChange={e => setData('domicare_data', {...data.domicare_data, nutrition: e.target.value})} className="w-full" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* DOMICARE - STEP 4 : Demande */}
-                                    {isDomicare && currentStep === 4 && (
-                                        <div className="grid grid-cols-1 gap-6">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <div className="p-2 bg-amber-100 dark:bg-amber-500/20 rounded-lg text-amber-600 dark:text-amber-400"><FiFileText size={20} /></div>
-                                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Demande & Besoins</h3>
-                                            </div>
-                                            
-                                            <div className="space-y-2">
-                                                <InputLabel value="Motif d'appel" className="text-gray-600 dark:text-gray-400 font-bold" />
-                                                <textarea rows="3" value={data.domicare_data.motif_appel} onChange={e => setData('domicare_data', {...data.domicare_data, motif_appel: e.target.value})} className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200/50 dark:border-gray-700/50 rounded-xl" placeholder="Décrivez le motif de l'appel..."></textarea>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <InputLabel value="Besoin d'Ambulance ?" className="text-gray-600 dark:text-gray-400 font-bold" />
-                                                <div className="flex gap-4">
-                                                    {['Oui', 'Non'].map(opt => (
-                                                        <label key={opt} className="flex items-center gap-2 p-3 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-900/20 flex-1 justify-center">
-                                                            <input type="radio" name="ambulance" value={opt} checked={data.domicare_data.ambulance === opt} onChange={e => setData('domicare_data', {...data.domicare_data, ambulance: e.target.value})} className="text-amber-600" />
-                                                            <span className="font-semibold text-gray-700 dark:text-gray-300">{opt}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <InputLabel value="Autres besoins spécifiques" className="text-gray-600 dark:text-gray-400" />
-                                                <textarea rows="2" value={data.domicare_data.autres_besoins} onChange={e => setData('domicare_data', {...data.domicare_data, autres_besoins: e.target.value})} className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200/50 dark:border-gray-700/50 rounded-xl"></textarea>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <InputLabel value="Profil recherché (Personnel souhaité)" className="text-gray-600 dark:text-gray-400 font-bold" />
-                                                <textarea rows="2" value={data.domicare_data.profil_recherche} onChange={e => setData('domicare_data', {...data.domicare_data, profil_recherche: e.target.value})} className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200/50 dark:border-gray-700/50 rounded-xl"></textarea>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <InputLabel value="Urgence de la prise en charge" className="text-gray-600 dark:text-gray-400 font-bold" />
-                                                <div className="flex gap-4 flex-wrap">
-                                                    {['Immédiate', '48h programmé'].map(opt => (
-                                                        <label key={opt} className="flex items-center gap-2 p-3 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 flex-1 justify-center">
-                                                            <input type="radio" name="urgence" value={opt} checked={data.domicare_data.urgence === opt} onChange={e => setData('domicare_data', {...data.domicare_data, urgence: e.target.value})} className="text-red-600" />
-                                                            <span className="font-semibold text-gray-700 dark:text-gray-300">{opt}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="space-y-2">
-                                                <InputLabel value="Observation Libre (Optionnel)" className="text-gray-600 dark:text-gray-400" />
-                                                <textarea rows="2" value={data.c_observation} onChange={e => setData('c_observation', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200/50 dark:border-gray-700/50 rounded-xl"></textarea>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* STANDARD - STEP 1 */}
-                                    {!isDomicare && currentStep === 1 && (
+                                    {/* STEP 1 */}
+                                    {currentStep === 1 && (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                             <div className="md:col-span-2 flex items-center gap-3 mb-2">
                                                 <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg text-indigo-600 dark:text-indigo-400"><FiUser size={20} /></div>
                                                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">Identité Personnelle</h3>
                                             </div>
 
-                                            
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <InputLabel value="Référence / Matricule Client" className="text-gray-600 dark:text-gray-400 font-semibold" />
+                                                    <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-bold border border-emerald-200/50 flex items-center gap-1">
+                                                        <FiCheckCircle size={11} /> Auto-généré
+                                                    </span>
+                                                </div>
+                                                <div className="w-full px-4 py-2.5 bg-indigo-50/40 dark:bg-gray-800/80 border border-indigo-200/40 dark:border-gray-700/50 rounded-xl font-mono text-indigo-600 dark:text-indigo-400 font-bold flex items-center justify-between select-none">
+                                                    <span className="flex items-center gap-2">
+                                                        <span className="text-xs text-indigo-500 dark:text-indigo-400 bg-indigo-100/60 dark:bg-indigo-950/60 px-2 py-0.5 rounded font-mono font-semibold">REF</span>
+                                                        <span>{data.c_mat || nextMatricule || 'AUTO'}</span>
+                                                    </span>
+                                                    <span className="text-xs text-gray-400 dark:text-gray-500 font-normal">Génération automatique</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <InputLabel value="Nom et prénom *" className="text-gray-600 dark:text-gray-400" />
+                                                <TextInput value={data.c_nom} onChange={e => setData('c_nom', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  border-gray-200/50 dark:border-gray-700/50 focus:ring-indigo-500/50 rounded-xl" required placeholder="Ex: Ahmed Alaoui" />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <InputLabel value="CIN / Passeport" className="text-gray-600 dark:text-gray-400" />
+                                                    <CinCheckInput value={data.c_cin} onChange={e => setData('c_cin', e.target.value)} type="all" className="w-full bg-gray-50 dark:bg-gray-800 rounded-xl" placeholder="Ex: AB123456" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <InputLabel value="Validité CIN" className="text-gray-600 dark:text-gray-400" />
+                                                    <TextInput type="date" value={data.c_cin_v} onChange={e => setData('c_cin_v', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl text-gray-500" />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <InputLabel value="Date de naissance" className="text-gray-600 dark:text-gray-400" />
+                                                <TextInput type="date" value={data.c_date_naissance} onChange={e => setData('c_date_naissance', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl text-gray-500" />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <InputLabel value="Nationalité" className="text-gray-600 dark:text-gray-400" />
+                                                <TextInput value={data.c_nationalite} onChange={e => setData('c_nationalite', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <InputLabel value="Situation familiale" className="text-gray-600 dark:text-gray-400" />
+                                                <select value={data.c_situation_fam} onChange={e => setData('c_situation_fam', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  border-gray-200/50 dark:border-gray-700/50 rounded-xl text-gray-700 dark:text-gray-300">
+                                                    <option value="">-- Sélectionnez --</option>
+                                                    <option value="Célibataire">Célibataire</option>
+                                                    <option value="Marié(e)">Marié(e)</option>
+                                                    <option value="Divorcé(e)">Divorcé(e)</option>
+                                                    <option value="Veuf(ve)">Veuf(ve)</option>
+                                                </select>
+                                            </div>
+
+                                            <ChildrenDetailsEditor
+                                                count={data.c_n_enfant}
+                                                onCountChange={(val) => {
+                                                    setData(prev => ({ ...prev, c_n_enfant: val, n_enfant: val }));
+                                                }}
+                                                details={data.c_enfants_details}
+                                                onDetailsChange={(val) => {
+                                                    setData(prev => ({ ...prev, c_enfants_details: val, enfants_details: val }));
+                                                }}
+                                                colorScheme="indigo"
+                                                label="Nombre d'enfants"
+                                            />
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <InputLabel value="Statut" className="text-gray-600 dark:text-gray-400" />
+                                                    <select
+                                                        value={data.statut || data.status || data.c_statut}
+                                                        onChange={e => {
+                                                            setData('statut', e.target.value);
+                                                            setData('c_statut', e.target.value);
+                                                            setData('status', e.target.value);
+                                                        }}
+                                                        className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200/50 dark:border-gray-700/50 rounded-xl text-gray-700 dark:text-gray-300"
+                                                    >
+                                                        {availableStatuses.map(st => (
+                                                            <option key={st} value={st}>{st}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                {(data.statut === 'Black liste' || data.status === 'Black liste' || data.c_statut === 'Black liste') && (
+                                                    <div className="space-y-2 col-span-2">
+                                                        <InputLabel value="Motif de la mise sur Black Liste" className="text-red-600 dark:text-red-400 font-bold" />
+                                                        <textarea
+                                                            value={data.blacklist_motif}
+                                                            onChange={e => setData('blacklist_motif', e.target.value)}
+                                                            className="w-full bg-red-50 dark:bg-red-900/10 rounded-xl border-red-200 dark:border-red-800/50 text-red-900 dark:text-red-300 min-h-[80px]"
+                                                            placeholder="Veuillez spécifier la raison..."
+                                                            required
+                                                        ></textarea>
+                                                    </div>
+                                                )}
+                                                <div className="space-y-2">
+                                                    <InputLabel value="Source" className="text-gray-600 dark:text-gray-400" />
+                                                        <DynamicSelect 
+                                                            value={data.c_source} 
+                                                            onChange={val => setData('c_source', val)} 
+                                                            options={RECRUITMENT_SOURCES}
+                                                            className="w-full h-[42px]"
+                                                        />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* STEP 2 */}
+                                    {currentStep === 2 && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                            <div className="md:col-span-2 flex items-center gap-3 mb-2">
+                                                <div className="p-2 bg-purple-100 dark:bg-purple-500/20 rounded-lg text-purple-600 dark:text-purple-400"><FiMapPin size={20} /></div>
+                                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Contact & Logement</h3>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <InputLabel value="Téléphone Principal (GSM 1)" className="text-gray-600 dark:text-gray-400" />
+                                                <TextInput value={data.c_gsm1} onChange={e => setData('c_gsm1', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" placeholder="06 XX XX XX XX" />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <InputLabel value="Téléphone Secondaire (GSM 2)" className="text-gray-600 dark:text-gray-400" />
+                                                <TextInput value={data.c_gsm2} onChange={e => setData('c_gsm2', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" placeholder="06 XX XX XX XX" />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <InputLabel value="Ville d'origine" className="text-gray-600 dark:text-gray-400" />
+                                                <TextInput value={data.c_ville_o} onChange={e => setData('c_ville_o', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <InputLabel value="Ville Actuelle" className="text-gray-600 dark:text-gray-400" />
+                                                <TextInput value={data.c_ville_a} onChange={e => setData('c_ville_a', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" />
+                                            </div>
+
+                                            <div className="md:col-span-2 space-y-2">
+                                                <InputLabel value="Adresse Actuelle" className="text-gray-600 dark:text-gray-400" />
+                                                <TextInput value={data.c_adresse_act} onChange={e => setData('c_adresse_act', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" placeholder="Adresse complète..." />
+                                            </div>
+
+                                            <div className="md:col-span-2 space-y-2">
+                                                <InputLabel value="Adresse figurant sur CIN" className="text-gray-600 dark:text-gray-400" />
+                                                <TextInput value={data.c_adresse_cin} onChange={e => setData('c_adresse_cin', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" />
+                                            </div>
+
+                                            <div className="md:col-span-2 space-y-2">
+                                                <InputLabel value="Type de Logement" className="text-gray-600 dark:text-gray-400" />
+                                                <TextInput value={data.c_logement} onChange={e => setData('c_logement', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  rounded-xl" placeholder="Ex: Appartement, Villa..." />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* STEP 3 */}
+                                    {currentStep === 3 && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                                            <div className="md:col-span-2 flex items-center gap-3 mb-2">
+                                                <div className="p-2 bg-emerald-100 dark:bg-emerald-500/20 rounded-lg text-emerald-600 dark:text-emerald-400"><FiBriefcase size={20} /></div>
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-gray-900 dark:text-white">Projet & Critères Demandés</h3>
+                                                    <p className="text-xs text-gray-500">Sélectionnez le projet, la catégorie du profil et les critères recherchés.</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <InputLabel value="Projet Associé *" className="text-gray-600 dark:text-gray-400" />
+                                                <select value={data.project_id} onChange={handleProjectChange} className="w-full bg-white dark:bg-gray-800 border-emerald-200/50 dark:border-emerald-700/50 focus:ring-emerald-500/50 rounded-xl text-gray-700 dark:text-gray-300 font-medium h-12 shadow-sm" required>
+                                                    <option value="">-- Sélectionnez un projet --</option>
+                                                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                                </select>
+                                            </div>
 
                                             <div className="space-y-2">
                                                 <InputLabel value="Catégorie du Profil / Type de personnel" className="text-gray-600 dark:text-gray-400" />
@@ -702,7 +538,7 @@ export default function Create({ projects = [], statuses = [], nextMatricule = 1
                                     )}
 
                                     {/* STEP 4 */}
-                                    {!isDomicare && currentStep === 4 && (
+                                    {currentStep === 4 && (
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                             <div className="md:col-span-2 flex items-center gap-3 mb-2">
                                                 <div className="p-2 bg-rose-100 dark:bg-rose-500/20 rounded-lg text-rose-600 dark:text-rose-400"><FiHeart size={20} /></div>
@@ -797,8 +633,6 @@ export default function Create({ projects = [], statuses = [], nextMatricule = 1
                         </div>
                     </form>
                 </div>
-                </>
-                )}
             </div>
         </AuthenticatedLayout>
     );
