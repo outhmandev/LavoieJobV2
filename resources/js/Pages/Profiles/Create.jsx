@@ -10,8 +10,11 @@ import PetAllergiesSelector from '@/Components/PetAllergiesSelector';
 import DiseaseSelector from '@/Components/DiseaseSelector';
 import ChildrenDetailsEditor from '@/Components/ChildrenDetailsEditor';
 import DynamicSelect from '@/Components/DynamicSelect';
-import { FiArrowLeft, FiSave, FiCheckCircle, FiChevronRight, FiChevronLeft, FiUser, FiMapPin, FiBriefcase, FiStar, FiFileText } from 'react-icons/fi';
+import Dropdown from '@/Components/Dropdown';
+import GroupedMissionsManager from '@/Components/GroupedMissionsManager';
+import { FiArrowLeft, FiSave, FiCheckCircle, FiChevronRight, FiChevronLeft, FiUser, FiMapPin, FiBriefcase, FiStar, FiPrinter, FiMail, FiPhone, FiCalendar, FiClock, FiMoreVertical, FiEdit2, FiTrash2, FiPlus, FiFileText, FiEye, FiDownload, FiFile, FiUploadCloud, FiX } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
+import ImageCropper from '@/Components/ImageCropper';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { PROFILE_STATUSES, RECRUITMENT_SOURCES, SPOKEN_LANGUAGES, RELIGIONS, EDUCATION_LEVELS, EDUCATION_SPECIALTIES, SALARY_PERIODS } from '@/constants';
@@ -64,16 +67,29 @@ export default function Create({ projects = [], statuses = PROFILE_STATUSES }) {
         mobility: 'Oui',
         languages: '',
         has_diseases: 'Non',
+        smoker: 'Non',
+        drinker: 'Non',
         pet_allergies: 'Non',
         allergy_details: '',
+        tranche_age: '',
+        enfants_gardes: '',
         observation: '',
         mode_emploi: '',
         type_contrat: '',
         repos: '',
-        missions: []
+        missions: [],
+        blacklist_motif: '',
+        avatar: null,
+        cin_files: [],
+        cv_file: null
     });
 
     const [currentStep, setCurrentStep] = useState(1);
+    const [avatarPreview, setAvatarPreview] = useState(null);
+    const [cinPreviews, setCinPreviews] = useState([]);
+    const [cvPreview, setCvPreview] = useState(null);
+    const [cropperOpen, setCropperOpen] = useState(false);
+    const [cropperImageSrc, setCropperImageSrc] = useState(null);
     const [selectedProject, setSelectedProject] = useState(null);
 
     const handleProjectChange = (e) => {
@@ -97,12 +113,51 @@ export default function Create({ projects = [], statuses = PROFILE_STATUSES }) {
         }
     };
 
+    const handleAvatarClick = (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const reader = new FileReader();
+            reader.addEventListener('load', () => setCropperImageSrc(reader.result));
+            reader.readAsDataURL(e.target.files[0]);
+            setCropperOpen(true);
+            e.target.value = null;
+        }
+    };
+
+    const handleCinChange = (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        const newFiles = [...(data.cin_files || []), ...files];
+        setData('cin_files', newFiles);
+        setCinPreviews(newFiles.map(f => URL.createObjectURL(f)));
+        e.target.value = null;
+    };
+
+    const removeCinFile = (index, e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const newFiles = [...(data.cin_files || [])];
+        newFiles.splice(index, 1);
+        setData('cin_files', newFiles);
+        
+        const newPreviews = [...cinPreviews];
+        URL.revokeObjectURL(newPreviews[index]);
+        newPreviews.splice(index, 1);
+        setCinPreviews(newPreviews);
+    };
+
+    const handleCvChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setData('cv_file', file);
+        setCvPreview(file.name);
+    };
+
     const submit = (e) => {
         if (e && e.preventDefault) e.preventDefault();
         if (currentStep !== steps.length) {
             return;
         }
-        post(route('profiles.store'));
+        post(route('profiles.store'), { forceFormData: true });
     };
 
     const handleKeyDown = (e) => {
@@ -123,6 +178,10 @@ export default function Create({ projects = [], statuses = PROFILE_STATUSES }) {
         setPage([newStep, newStep > currentStep ? 1 : -1]);
         setCurrentStep(newStep);
     };
+
+    const isLallaGhalia = selectedProject && (selectedProject.name === 'LALLA GHALIA' || selectedProject.name === 'LALLA LGHALIA');
+    const isNounou = ['NOUBONNE', 'NOUNOU', 'NOUNOU OCCASIONNELLE', 'NOUBONNE OCCASIONNELLE'].includes(data.job);
+    const showNounouFields = isLallaGhalia && isNounou;
 
     return (
         <AuthenticatedLayout
@@ -224,17 +283,71 @@ export default function Create({ projects = [], statuses = PROFILE_STATUSES }) {
 
                                             {/* File Uploads */}
                                             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
-                                                <div className="p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-colors bg-gray-50 dark:bg-gray-800">
-                                                    <InputLabel value="Photo de profil" className="text-center font-semibold mb-2" />
-                                                    <input type="file" className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700" />
+                                                
+                                                {/* Photo de profil */}
+                                                <div className="p-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shadow-sm relative group transition-all">
+                                                    <InputLabel value="Photo de profil" className="text-center font-bold text-indigo-900 dark:text-indigo-300 mb-3" />
+                                                    <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-indigo-200 dark:border-indigo-500/30 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-white dark:hover:bg-gray-900 transition-all overflow-hidden relative">
+                                                        {avatarPreview ? (
+                                                            <div className="absolute inset-0 w-full h-full p-2 bg-white dark:bg-gray-900 flex justify-center items-center">
+                                                                <img src={avatarPreview} alt="Avatar" className="w-20 h-20 rounded-full object-cover border-4 border-indigo-100 shadow-md" />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex flex-col items-center justify-center">
+                                                                <FiUploadCloud className="w-6 h-6 text-indigo-400 mb-2 group-hover:scale-110 transition-transform" />
+                                                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Ajouter une photo</span>
+                                                            </div>
+                                                        )}
+                                                        <input type="file" onChange={handleAvatarClick} accept="image/*" className="hidden" />
+                                                    </label>
                                                 </div>
-                                                <div className="p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-colors bg-gray-50 dark:bg-gray-800">
-                                                    <InputLabel value="CIN / Passeport" className="text-center font-semibold mb-2" />
-                                                    <input type="file" className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700" />
+
+                                                {/* CIN / Passeport */}
+                                                <div className="p-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shadow-sm relative group transition-all">
+                                                    <InputLabel value="CIN / Passeport (Multiple)" className="text-center font-bold text-indigo-900 dark:text-indigo-300 mb-3" />
+                                                    <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-indigo-200 dark:border-indigo-500/30 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-white dark:hover:bg-gray-900 transition-all overflow-hidden relative">
+                                                        {cinPreviews.length > 0 ? (
+                                                            <div className="absolute inset-0 w-full h-full p-2 bg-white dark:bg-gray-900 flex justify-center items-center gap-2 overflow-x-auto">
+                                                                {cinPreviews.map((url, i) => (
+                                                                    <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border-2 border-indigo-100 shadow-sm shrink-0 group/img">
+                                                                        <img src={url} className="w-full h-full object-cover" />
+                                                                        <button type="button" onClick={(e) => removeCinFile(i, e)} className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover/img:opacity-100 transition-opacity">
+                                                                            <FiX size={12} />
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                                <div className="w-16 h-16 rounded-lg border-2 border-dashed border-indigo-200 flex flex-col items-center justify-center shrink-0 hover:bg-indigo-50 dark:hover:bg-gray-800 transition-colors">
+                                                                    <FiUploadCloud className="text-indigo-400" size={16} />
+                                                                    <span className="text-[10px] text-gray-500 mt-1 font-medium">Ajouter</span>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex flex-col items-center justify-center">
+                                                                <FiFile className="w-6 h-6 text-indigo-400 mb-2 group-hover:scale-110 transition-transform" />
+                                                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Ajouter (Recto/Verso)</span>
+                                                            </div>
+                                                        )}
+                                                        <input type="file" multiple onChange={handleCinChange} className="hidden" />
+                                                    </label>
                                                 </div>
-                                                <div className="p-4 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-indigo-500 transition-colors bg-gray-50 dark:bg-gray-800">
-                                                    <InputLabel value="CV (Document)" className="text-center font-semibold mb-2" />
-                                                    <input type="file" className="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700" />
+
+                                                {/* CV */}
+                                                <div className="p-4 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shadow-sm relative group transition-all">
+                                                    <InputLabel value="CV (Document)" className="text-center font-bold text-indigo-900 dark:text-indigo-300 mb-3" />
+                                                    <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-indigo-200 dark:border-indigo-500/30 rounded-xl cursor-pointer hover:border-indigo-500 hover:bg-white dark:hover:bg-gray-900 transition-all overflow-hidden relative">
+                                                        {cvPreview ? (
+                                                            <div className="absolute inset-0 w-full h-full p-3 bg-white dark:bg-gray-900 flex flex-col justify-center items-center text-center">
+                                                                <FiFileText size={24} className="text-indigo-500 mb-2" />
+                                                                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-400 truncate w-full px-2" title={cvPreview}>{cvPreview}</span>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex flex-col items-center justify-center">
+                                                                <FiFileText className="w-6 h-6 text-indigo-400 mb-2 group-hover:scale-110 transition-transform" />
+                                                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Joindre le CV</span>
+                                                            </div>
+                                                        )}
+                                                        <input type="file" onChange={handleCvChange} className="hidden" />
+                                                    </label>
                                                 </div>
                                             </div>
 
@@ -382,6 +495,32 @@ export default function Create({ projects = [], statuses = PROFILE_STATUSES }) {
                                                 </select>
                                             </div>
 
+                                            {showNounouFields && (
+                                                <div className="grid grid-cols-2 gap-4 md:col-span-2 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-100 dark:border-purple-800/30">
+                                                    <div className="space-y-2">
+                                                        <InputLabel value="Tranche d'âge possible de garder" className="text-gray-600 dark:text-gray-400" />
+                                                        <select value={data.tranche_age} onChange={e => setData('tranche_age', e.target.value)} className="w-full bg-white dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300">
+                                                            <option value="">-- Sélectionnez --</option>
+                                                            <option value="0 - 1 an">0 - 1 an</option>
+                                                            <option value="1 - 3 ans">1 - 3 ans</option>
+                                                            <option value="3 - 6 ans">3 - 6 ans</option>
+                                                            <option value="6 - 10 ans">6 - 10 ans</option>
+                                                            <option value="+ 10 ans">+ 10 ans</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <InputLabel value="Combien d'enfants pouvez-vous garder ?" className="text-gray-600 dark:text-gray-400" />
+                                                        <select value={data.enfants_gardes} onChange={e => setData('enfants_gardes', e.target.value)} className="w-full bg-white dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300">
+                                                            <option value="">-- Sélectionnez --</option>
+                                                            <option value="1">1 enfant</option>
+                                                            <option value="2">2 enfants</option>
+                                                            <option value="3">3 enfants</option>
+                                                            <option value="4+">4 et plus</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <InputLabel value="Niveau d'étude" className="text-gray-600 dark:text-gray-400" />
@@ -457,32 +596,11 @@ export default function Create({ projects = [], statuses = PROFILE_STATUSES }) {
                                                         Veuillez sélectionner un projet (Étape 3) pour voir les missions disponibles.
                                                     </div>
                                                 ) : (
-                                                    <div className="grid grid-cols-1 gap-6">
-                                                        {selectedProject.grouped_missions && Object.entries(selectedProject.grouped_missions).map(([group, missions]) => (
-                                                            <div key={group} className="bg-white/50 dark:bg-gray-800/30 rounded-2xl p-5 border border-gray-100 dark:border-gray-700/50">
-                                                                <h4 className="font-bold text-gray-800 dark:text-gray-200 mb-4">{group}</h4>
-                                                                <div className="flex flex-wrap gap-2">
-                                                                    {missions.map(mission => {
-                                                                        const isSelected = data.missions.includes(mission);
-                                                                        return (
-                                                                            <button
-                                                                                key={mission}
-                                                                                type="button"
-                                                                                onClick={() => handleMissionToggle(mission)}
-                                                                                className={cn(
-                                                                                    "px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 border-2",
-                                                                                    isSelected ? "bg-amber-500/10 border-amber-500 text-amber-600 dark:text-amber-400" : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-amber-300"
-                                                                                )}
-                                                                            >
-                                                                                {isSelected && <span className="mr-2">✓</span>}
-                                                                                {mission}
-                                                                            </button>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
+                                                    <GroupedMissionsManager
+                                                        groupedMissions={selectedProject.grouped_missions || {}}
+                                                        selectedMissions={data.missions}
+                                                        onChange={(newMissions) => setData('missions', newMissions)}
+                                                    />
                                                 )}
                                             </div>
 
@@ -496,6 +614,28 @@ export default function Create({ projects = [], statuses = PROFILE_STATUSES }) {
                                                 <div className="flex gap-4">
                                                     {['Oui', 'Non'].map(opt => (
                                                         <div key={opt} onClick={() => setData('mobility', opt)} className={cn("flex-1 text-center py-2.5 rounded-xl border-2 cursor-pointer transition-all font-semibold", data.mobility === opt ? "border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400" : "border-gray-200 dark:border-gray-700 text-gray-500")}>
+                                                            {opt}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <InputLabel value="Tabagiste (Fumeur)" className="text-gray-600 dark:text-gray-400" />
+                                                <div className="flex gap-4">
+                                                    {['Oui', 'Non'].map(opt => (
+                                                        <div key={opt} onClick={() => setData('smoker', opt)} className={cn("flex-1 text-center py-2.5 rounded-xl border-2 cursor-pointer transition-all font-semibold", data.smoker === opt ? "border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400" : "border-gray-200 dark:border-gray-700 text-gray-500")}>
+                                                            {opt}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <InputLabel value="Buveur (Alcool)" className="text-gray-600 dark:text-gray-400" />
+                                                <div className="flex gap-4">
+                                                    {['Oui', 'Non'].map(opt => (
+                                                        <div key={opt} onClick={() => setData('drinker', opt)} className={cn("flex-1 text-center py-2.5 rounded-xl border-2 cursor-pointer transition-all font-semibold", data.drinker === opt ? "border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400" : "border-gray-200 dark:border-gray-700 text-gray-500")}>
                                                             {opt}
                                                         </div>
                                                     ))}
@@ -525,6 +665,18 @@ export default function Create({ projects = [], statuses = PROFILE_STATUSES }) {
                                                         ))}
                                                     </select>
                                                 </div>
+                                                {data.status === 'Black liste' && (
+                                                    <div className="space-y-2 md:col-span-2">
+                                                        <InputLabel value="Motif de la mise sur Black Liste" className="text-red-600 dark:text-red-400 font-bold" />
+                                                        <textarea
+                                                            value={data.blacklist_motif}
+                                                            onChange={e => setData('blacklist_motif', e.target.value)}
+                                                            className="w-full bg-red-50 dark:bg-red-900/10 rounded-xl border-red-200 dark:border-red-800/50 text-red-900 dark:text-red-300 min-h-[80px]"
+                                                            placeholder="Veuillez spécifier la raison..."
+                                                            required
+                                                        ></textarea>
+                                                    </div>
+                                                )}
                                                 <div className="space-y-2">
                                                     <InputLabel value="Source de recrutement" className="text-gray-600 dark:text-gray-400" />
                                                 <DynamicSelect 
@@ -583,6 +735,18 @@ export default function Create({ projects = [], statuses = PROFILE_STATUSES }) {
                     </form>
                 </div>
             </div>
+            {cropperOpen && cropperImageSrc && (
+                <ImageCropper 
+                    imageSrc={cropperImageSrc} 
+                    onCropComplete={(blob) => {
+                        const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
+                        setData('avatar', file);
+                        setAvatarPreview(URL.createObjectURL(blob));
+                        setCropperOpen(false);
+                    }} 
+                    onCancel={() => setCropperOpen(false)} 
+                />
+            )}
         </AuthenticatedLayout>
     );
 }

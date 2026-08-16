@@ -253,9 +253,6 @@ export default function Create({
                                         >
                                             <option value="Nouvelle">Nouvelle (Nouvelle Affectation)</option>
                                             <option value="Changement">Changement (Changement de profil / Remplacement)</option>
-                                            <option value="active">Actif (En cours)</option>
-                                            <option value="completed">Terminé</option>
-                                            <option value="cancelled">Annulé</option>
                                         </select>
                                         <InputError message={errors.status} className="mt-2" />
                                     </div>

@@ -88,6 +88,10 @@ class Profile extends Model implements Auditable
         'criteria',
         'attending_physician',
         'languages',
+        'tranche_age',
+        'enfants_gardes',
+        'smoker',
+        'drinker',
         // Aliased fillables
         'nom',
         'mat',
@@ -107,7 +111,15 @@ class Profile extends Model implements Auditable
         'gsm1',
         'gsm2',
         'fonction',
+        'blacklist_motif',
     ];
+
+    protected $guarded = ['id'];
+
+    public function documents()
+    {
+        return $this->morphMany(Document::class, 'documentable');
+    }
 
     protected $appends = [
         'nom',

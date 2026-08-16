@@ -8,7 +8,9 @@ import ChildrenDetailsEditor from '@/Components/ChildrenDetailsEditor';
 import LanguageSelector from '@/Components/LanguageSelector';
 import DomesticAnimalsSelector from '@/Components/DomesticAnimalsSelector';
 import DynamicSelect from '@/Components/DynamicSelect';
-import { FiArrowLeft, FiSave, FiCheckCircle, FiChevronRight, FiChevronLeft, FiUser, FiMapPin, FiBriefcase, FiHeart } from 'react-icons/fi';
+import DiseaseSelector from '@/Components/DiseaseSelector';
+import GroupedMissionsManager from '@/Components/GroupedMissionsManager';
+import { FiArrowLeft, FiSave, FiCheckCircle, FiChevronRight, FiChevronLeft, FiUser, FiMapPin, FiBriefcase, FiHeart, FiFileText } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -25,8 +27,8 @@ const steps = [
     { id: 4, name: 'Médical', icon: FiHeart },
 ];
 
-export default function Create({ projects = [], statuses = CLIENT_STATUSES, nextMatricule = 1000 }) {
-    const availableStatuses = Array.from(new Set([...(statuses || []), ...CLIENT_STATUSES]));
+export default function Create({ projects = [], statuses = [], nextMatricule = 1000 }) {
+    const availableStatuses = statuses || [];
 
     const { data, setData, post, processing, errors } = useForm({
         c_nom: '', 
@@ -67,6 +69,7 @@ export default function Create({ projects = [], statuses = CLIENT_STATUSES, next
         c_mode: '',
         c_type_contrat: '',
         c_experience: '',
+        blacklist_motif: '',
     });
 
     const [currentStep, setCurrentStep] = useState(1);
@@ -315,6 +318,18 @@ export default function Create({ projects = [], statuses = CLIENT_STATUSES, next
                                                         ))}
                                                     </select>
                                                 </div>
+                                                {(data.statut === 'Black liste' || data.status === 'Black liste' || data.c_statut === 'Black liste') && (
+                                                    <div className="space-y-2 col-span-2">
+                                                        <InputLabel value="Motif de la mise sur Black Liste" className="text-red-600 dark:text-red-400 font-bold" />
+                                                        <textarea
+                                                            value={data.blacklist_motif}
+                                                            onChange={e => setData('blacklist_motif', e.target.value)}
+                                                            className="w-full bg-red-50 dark:bg-red-900/10 rounded-xl border-red-200 dark:border-red-800/50 text-red-900 dark:text-red-300 min-h-[80px]"
+                                                            placeholder="Veuillez spécifier la raison..."
+                                                            required
+                                                        ></textarea>
+                                                    </div>
+                                                )}
                                                 <div className="space-y-2">
                                                     <InputLabel value="Source" className="text-gray-600 dark:text-gray-400" />
                                                         <DynamicSelect 
@@ -401,6 +416,33 @@ export default function Create({ projects = [], statuses = CLIENT_STATUSES, next
                                                 {!selectedProject && <p className="text-xs text-gray-400 mt-1 italic">Veuillez d'abord sélectionner un projet.</p>}
                                             </div>
 
+                                            {(selectedProject?.name === 'LALLA GHALIA' || selectedProject?.name === 'LALLA LGHALIA') && 
+                                             ['NOUBONNE', 'NOUNOU', 'NOUNOU OCCASIONNELLE', 'NOUBONNE OCCASIONNELLE'].includes(data.c_fonction) && (
+                                                <div className="grid grid-cols-2 gap-4 md:col-span-2 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-100 dark:border-purple-800/30">
+                                                    <div className="space-y-2">
+                                                        <InputLabel value="Tranche d'âge possible de garder" className="text-gray-600 dark:text-gray-400" />
+                                                        <select value={data.tranche_age} onChange={e => setData('tranche_age', e.target.value)} className="w-full bg-white dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 h-12">
+                                                            <option value="">-- Sélectionnez --</option>
+                                                            <option value="0 - 1 an">0 - 1 an</option>
+                                                            <option value="1 - 3 ans">1 - 3 ans</option>
+                                                            <option value="3 - 6 ans">3 - 6 ans</option>
+                                                            <option value="6 - 10 ans">6 - 10 ans</option>
+                                                            <option value="+ 10 ans">+ 10 ans</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <InputLabel value="Combien d'enfants avez-vous ?" className="text-gray-600 dark:text-gray-400" />
+                                                        <select value={data.enfants_gardes} onChange={e => setData('enfants_gardes', e.target.value)} className="w-full bg-white dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 h-12">
+                                                            <option value="">-- Sélectionnez --</option>
+                                                            <option value="1">1 enfant</option>
+                                                            <option value="2">2 enfants</option>
+                                                            <option value="3">3 enfants</option>
+                                                            <option value="4+">4 et plus</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <div className="space-y-2">
                                                 <InputLabel value="Mode d'emploi" className="text-gray-600 dark:text-gray-400" />
                                                 <DynamicSelect 
@@ -443,34 +485,11 @@ export default function Create({ projects = [], statuses = CLIENT_STATUSES, next
                                                         Aucun critère spécifique configuré pour ce projet.
                                                     </div>
                                                 ) : (
-                                                    <div className="grid grid-cols-1 gap-4">
-                                                        {Object.entries(selectedProject.grouped_missions).map(([group, missions]) => (
-                                                            <div key={group} className="bg-white/60 dark:bg-gray-800/40 rounded-2xl p-5 border border-emerald-100 dark:border-emerald-900/30 shadow-sm">
-                                                                <h4 className="font-bold text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-3">{group}</h4>
-                                                                <div className="flex flex-wrap gap-2">
-                                                                    {missions.map(mission => {
-                                                                        const isSelected = (data.missions || []).includes(mission);
-                                                                        return (
-                                                                            <button
-                                                                                key={mission}
-                                                                                type="button"
-                                                                                onClick={() => handleMissionToggle(mission)}
-                                                                                className={cn(
-                                                                                    "px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border-2 flex items-center gap-1.5",
-                                                                                    isSelected 
-                                                                                        ? "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm" 
-                                                                                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-emerald-300"
-                                                                                )}
-                                                                            >
-                                                                                <span>{isSelected ? '✓' : '+'}</span>
-                                                                                {mission}
-                                                                            </button>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
+                                                    <GroupedMissionsManager
+                                                        groupedMissions={selectedProject.grouped_missions || {}}
+                                                        selectedMissions={data.missions || []}
+                                                        onChange={(newMissions) => setData('missions', newMissions)}
+                                                    />
                                                 )}
                                             </div>
 

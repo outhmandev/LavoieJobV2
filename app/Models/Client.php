@@ -12,6 +12,16 @@ class Client extends Model implements Auditable
     use \OwenIt\Auditing\Auditable;
     protected $guarded = ['id'];
 
+    public function documents()
+    {
+        return $this->morphMany(Document::class, 'documentable');
+    }
+
+    public function reclamations()
+    {
+        return $this->hasMany(Reclamation::class);
+    }
+
     public const STATUSES = [
         'Prospect',
         'En cours de traitement',
@@ -78,6 +88,8 @@ class Client extends Model implements Auditable
         'presence_animaux',
         'nombre_animaux',
         'animaux_details',
+        'tranche_age',
+        'enfants_gardes',
         // Aliased fillables
         'c_nom',
         'c_mat',
@@ -119,6 +131,7 @@ class Client extends Model implements Auditable
         'criteria',
         'languages',
         'mobility',
+        'blacklist_motif',
     ];
 
     protected $casts = [

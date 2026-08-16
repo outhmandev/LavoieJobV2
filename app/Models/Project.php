@@ -43,7 +43,7 @@ class Project extends Model implements Auditable
 
     public function getGroupedMissionsAttribute()
     {
-        return $this->missions->groupBy('group')->map(function ($missions) {
+        return $this->missions->groupBy('group_name')->map(function ($missions) {
             return $missions->pluck('name');
         });
     }

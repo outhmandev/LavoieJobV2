@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Project;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
@@ -59,6 +60,8 @@ class UserController extends Controller
                 ['value' => 'System Administrator', 'label' => 'System Administrator', 'description' => 'Accès technique total et configuration de la plateforme.'],
                 ['value' => 'Developer', 'label' => 'Développeur', 'description' => 'Accès développeur complet à toutes les fonctionnalités et paramètres du système sans restriction.'],
             ],
+            'permissions' => Permission::all(),
+            'roles' => Role::whereIn('name', ['Marketing', 'RH', 'Gestion'])->get(),
         ]);
     }
 
@@ -68,6 +71,10 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
             'role' => 'nullable|string',
+            'roles' => 'nullable|array',
+            'roles.*' => 'string',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string',
             'projects' => 'required|array|min:1',
             'projects.*' => 'exists:projects,id',
         ], [
@@ -91,9 +98,24 @@ class UserController extends Controller
             'invitation_expires_at' => now()->addHours(48),
         ]);
 
-        // Sync Spatie role
-        $roleObj = Role::firstOrCreate(['name' => $assignedRole]);
-        $user->syncRoles([$roleObj->name]);
+        // Sync Spatie roles (Only allow valid secondary roles + the new primary role)
+        $permittedSecondaryRoles = ['Marketing', 'RH', 'Gestion'];
+        $rolesToSync = array_intersect($validated['roles'] ?? [], $permittedSecondaryRoles);
+        
+        if (!in_array($assignedRole, $rolesToSync)) {
+            $rolesToSync[] = $assignedRole;
+        }
+
+        foreach ($rolesToSync as $roleName) {
+            Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
+        }
+        $user->syncRoles($rolesToSync);
+
+        // Sync Direct Permissions
+        $permissionsToSync = $validated['permissions'] ?? [];
+        if (!empty($permissionsToSync)) {
+            $user->syncPermissions($permissionsToSync);
+        }
 
         // Sync Assigned Projects
         if (!empty($validated['projects'])) {
@@ -134,13 +156,15 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $roles = Role::all();
+        $permissions = Permission::all();
         $projects = Project::all();
-        $user->load('roles', 'projects');
+        $user->load('roles', 'permissions', 'projects');
 
         return Inertia::render('Admin/Users/Edit', [
-            'user' => $user,
-            'roles' => $roles,
-            'projects' => $projects,
+            'user' => $user->load(['projects', 'roles', 'permissions']),
+            'roles' => Role::whereIn('name', ['Marketing', 'RH', 'Gestion'])->get(),
+            'permissions' => Permission::all(),
+            'projects' => Project::all(),
             'availablePrimaryRoles' => [
                 ['value' => 'Membre', 'label' => 'Membre (Opérationnel)'],
                 ['value' => 'Admin', 'label' => 'Admin'],
@@ -160,6 +184,8 @@ class UserController extends Controller
             'role' => 'required|string',
             'roles' => 'nullable|array',
             'roles.*' => 'string',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string',
             'projects' => 'nullable|array',
             'projects.*' => 'exists:projects,id',
         ], [
@@ -182,19 +208,29 @@ class UserController extends Controller
 
         $user->update($updateData);
 
-        // Sync Spatie roles
-        $rolesToSync = $validated['roles'] ?? [];
-        if (empty($rolesToSync) && !empty($validated['role'])) {
-            $rolesToSync = [$validated['role']];
+        // Sync Spatie roles (Only allow valid secondary roles + the new primary role)
+        $permittedSecondaryRoles = ['Marketing', 'RH', 'Gestion'];
+        $rolesToSync = array_intersect($validated['roles'] ?? [], $permittedSecondaryRoles);
+        
+        if (!empty($validated['role']) && !in_array($validated['role'], $rolesToSync)) {
+            $rolesToSync[] = $validated['role'];
         }
 
         if (!empty($rolesToSync)) {
-            $validRoleNames = Role::whereIn('name', $rolesToSync)->pluck('name')->toArray();
-            if (!empty($validRoleNames)) {
-                $user->syncRoles($validRoleNames);
+            foreach ($rolesToSync as $roleName) {
+                Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
             }
+            $user->syncRoles($rolesToSync);
         } else {
             $user->syncRoles([]);
+        }
+
+        // Sync Direct Permissions
+        $permissionsToSync = $validated['permissions'] ?? [];
+        if (!empty($permissionsToSync)) {
+            $user->syncPermissions($permissionsToSync);
+        } else {
+            $user->syncPermissions([]);
         }
 
         // Sync projects

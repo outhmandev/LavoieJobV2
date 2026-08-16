@@ -43,7 +43,7 @@ export default function Index({ users = [], filters = {}, roles = [], projects =
         const r = (roleName || '').toLowerCase();
         if (r.includes('super admin') || r.includes('system administrator')) {
             return (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                <span key={roleName} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
                     <FiShield size={12} />
                     {roleName}
                 </span>
@@ -51,7 +51,7 @@ export default function Index({ users = [], filters = {}, roles = [], projects =
         }
         if (r.includes('admin')) {
             return (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                <span key={roleName} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                     <FiShield size={12} />
                     {roleName}
                 </span>
@@ -59,7 +59,7 @@ export default function Index({ users = [], filters = {}, roles = [], projects =
         }
         if (r.includes('membre') || r.includes('member')) {
             return (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                <span key={roleName} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                     <FiUserCheck size={12} />
                     Membre
                 </span>
@@ -67,13 +67,13 @@ export default function Index({ users = [], filters = {}, roles = [], projects =
         }
         if (r.includes('client')) {
             return (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                <span key={roleName} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                     Client
                 </span>
             );
         }
         return (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+            <span key={roleName} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
                 {roleName || 'N/A'}
             </span>
         );
@@ -153,7 +153,7 @@ export default function Index({ users = [], filters = {}, roles = [], projects =
                             <thead>
                                 <tr className="bg-gray-50/80 dark:bg-gray-800/80 border-b border-gray-100 dark:border-gray-700/50">
                                     <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Collaborateur</th>
-                                    <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rôle Principal</th>
+                                    <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Rôles</th>
                                     <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Projets Assignés</th>
                                     <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Statut Compte</th>
                                     <th className="py-4 px-6 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
@@ -185,7 +185,12 @@ export default function Index({ users = [], filters = {}, roles = [], projects =
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6">
-                                                {getRoleBadge(user.role)}
+                                                <div className="flex flex-wrap gap-1.5 max-w-xs">
+                                                    {user.roles && user.roles.length > 0 
+                                                        ? user.roles.map(r => getRoleBadge(r.name))
+                                                        : getRoleBadge(user.role)
+                                                    }
+                                                </div>
                                             </td>
                                             <td className="py-4 px-6">
                                                 <div className="flex flex-wrap gap-1.5 max-w-xs">

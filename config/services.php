@@ -42,4 +42,16 @@ return [
         'domain' => env('CPANEL_DOMAIN'),
     ],
 
+    'facebook' => [
+        'app_id' => env('FACEBOOK_APP_ID'),
+        'app_secret' => env('FACEBOOK_APP_SECRET'),
+        'redirect' => env('FACEBOOK_REDIRECT_URI'),
+    ],
+
+    'threads' => [
+        'app_id' => env('THREADS_APP_ID'),
+        'app_secret' => env('THREADS_APP_SECRET'),
+        'redirect' => env('THREADS_REDIRECT_URI'),
+    ],
+
 ];

@@ -3,13 +3,13 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, Link, router } from '@inertiajs/react';
 import {
     FiArrowLeft, FiSave, FiUser, FiMail, FiLock,
-    FiShield, FiBriefcase, FiTrash2, FiCheck
+    FiShield, FiBriefcase, FiTrash2, FiCheck, FiLayers, FiKey
 } from 'react-icons/fi';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 
-export default function Edit({ user, roles = [], projects = [], availablePrimaryRoles = [] }) {
+export default function Edit({ user, roles = [], permissions = [], projects = [], availablePrimaryRoles = [] }) {
     const { data, setData, put, processing, errors } = useForm({
         name: user.name || '',
         email: user.email || '',
@@ -17,6 +17,7 @@ export default function Edit({ user, roles = [], projects = [], availablePrimary
         password_confirmation: '',
         role: user.role || 'Membre',
         roles: user.roles?.map(r => r.name) || [user.role || 'Membre'],
+        permissions: user.permissions?.map(p => p.name) || [],
         projects: user.projects?.map(p => p.id) || [],
     });
 
@@ -33,6 +34,28 @@ export default function Edit({ user, roles = [], projects = [], availablePrimary
                 role: roleValue,
                 roles: newRoles,
             };
+        });
+    };
+
+    const handleSecondaryRoleToggle = (roleName) => {
+        setData(prev => {
+            if (prev.roles.includes(roleName)) {
+                // Prevent removing primary role from roles list
+                if (roleName === prev.role) return prev;
+                return { ...prev, roles: prev.roles.filter(r => r !== roleName) };
+            } else {
+                return { ...prev, roles: [...prev.roles, roleName] };
+            }
+        });
+    };
+
+    const handlePermissionToggle = (permissionName) => {
+        setData(prev => {
+            if (prev.permissions.includes(permissionName)) {
+                return { ...prev, permissions: prev.permissions.filter(p => p !== permissionName) };
+            } else {
+                return { ...prev, permissions: [...prev.permissions, permissionName] };
+            }
         });
     };
 
@@ -180,7 +203,8 @@ export default function Edit({ user, roles = [], projects = [], availablePrimary
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {['Membre', 'Admin', 'Super Admin', 'System Administrator', 'Client'].map(roleName => {
+                            {availablePrimaryRoles.map(roleData => {
+                                const roleName = roleData.value;
                                 const isSelected = data.role === roleName;
                                 return (
                                     <div
@@ -202,7 +226,7 @@ export default function Edit({ user, roles = [], projects = [], availablePrimary
                                                     {isSelected && <FiCheck size={12} />}
                                                 </div>
                                                 <span className="font-bold text-sm text-gray-900 dark:text-white">
-                                                    {roleName}
+                                                    {roleData.label}
                                                 </span>
                                             </div>
                                         </div>
@@ -211,6 +235,93 @@ export default function Edit({ user, roles = [], projects = [], availablePrimary
                             })}
                         </div>
                         <InputError message={errors.role} className="mt-2" />
+                    </div>
+
+                    {/* Rôles Secondaires */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/70 p-6 md:p-8">
+                        <div className="flex items-center gap-3 pb-4 mb-6 border-b border-gray-100 dark:border-gray-700">
+                            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
+                                <FiLayers size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Rôles Secondaires</h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Ajoutez des rôles supplémentaires à ce collaborateur.</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {roles.filter(r => r.name !== data.role).map(role => {
+                                const roleName = role.name;
+                                const isChecked = data.roles.includes(roleName);
+                                return (
+                                    <label
+                                        key={roleName}
+                                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                                            isChecked
+                                                ? 'border-purple-500 bg-purple-50/40 dark:bg-purple-950/20 text-purple-900 dark:text-purple-200'
+                                                : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300'
+                                        }`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                                            checked={isChecked}
+                                            onChange={() => handleSecondaryRoleToggle(roleName)}
+                                        />
+                                        <span className="text-sm font-medium">
+                                            {roleName}
+                                        </span>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Permissions Directes */}
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200/70 dark:border-gray-700/70 p-6 md:p-8">
+                        <div className="flex items-center gap-3 pb-4 mb-6 border-b border-gray-100 dark:border-gray-700">
+                            <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold">
+                                <FiKey size={20} />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Permissions Directes</h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Permissions spécifiques en plus de celles héritées des rôles.</p>
+                            </div>
+                        </div>
+
+                        {permissions.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                {permissions.map(permission => {
+                                    const permissionName = permission.name;
+                                    const isChecked = data.permissions.includes(permissionName);
+                                    return (
+                                        <label
+                                            key={permissionName}
+                                            className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                                                isChecked
+                                                    ? 'border-teal-500 bg-teal-50/40 dark:bg-teal-950/20 text-teal-900 dark:text-teal-200'
+                                                    : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 text-gray-700 dark:text-gray-300'
+                                            }`}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                className="w-4 h-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                                                checked={isChecked}
+                                                onChange={() => handlePermissionToggle(permissionName)}
+                                            />
+                                            <span className="text-sm font-medium">
+                                                {permissionName}
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="p-4 bg-gray-50 dark:bg-gray-750 rounded-xl text-sm text-gray-500 text-center">
+                                Aucune permission disponible.
+                            </div>
+                        )}
+                        <InputError message={errors.permissions} className="mt-2" />
                     </div>
 
                     {/* Projets Assignés */}

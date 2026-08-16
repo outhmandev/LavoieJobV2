@@ -150,13 +150,18 @@ class ClientRequest extends FormRequest
             'situation_fam' => 'nullable|string|max:255',
             'n_enfant' => 'nullable|integer|min:0',
             'enfants_details' => 'nullable|string',
-            'adresse_cin' => 'nullable|string|max:255',
-            'ville_o' => 'nullable|string|max:255',
+            'animaux_details' => 'nullable|string',
+            'tranche_age' => 'nullable|string|max:255',
+            'enfants_gardes' => 'nullable|string|max:255',
+            // Aliased validation fields (mapping handled before validation)
+            'c_nom' => 'nullable|string|max:255',
             'adresse_act' => 'nullable|string|max:255',
             'ville_a' => 'nullable|string|max:255',
             'logement' => 'nullable|string|max:255',
             'gsm1' => 'nullable|string|max:255',
             'gsm2' => 'nullable|string|max:255',
+            'adresse_cin' => 'nullable|string|max:255',
+            'ville_o' => 'nullable|string|max:255',
             'source' => 'nullable|string|max:255',
             'csource' => 'nullable|string|max:255',
             'responsable' => 'nullable|string|max:255',
@@ -184,6 +189,7 @@ class ClientRequest extends FormRequest
             'presence_animaux' => 'nullable|string|max:20',
             'nombre_animaux' => 'nullable|integer|min:0',
             'animaux_details' => 'nullable|string',
+            'blacklist_motif' => 'nullable|string',
         ];
     }
 }

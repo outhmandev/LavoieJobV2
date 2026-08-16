@@ -216,7 +216,9 @@ export default function Index({ clients, filters, options }) {
                                             <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
                                                 {client?.c_nom?.charAt(0) || '?'}
                                             </div>
-                                            <span className="font-semibold text-gray-900 dark:text-white">{client?.c_nom || 'N/A'}</span>
+                                            <Link href={route('clients.edit', client.id)} className="font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                                {client?.c_nom || 'N/A'}
+                                            </Link>
                                         </div>
                                     </td>
                                     <td className="py-4 px-6 text-sm font-mono text-gray-600 dark:text-gray-300">{client?.mat || client?.c_mat || <span className="text-gray-300">-</span>}</td>

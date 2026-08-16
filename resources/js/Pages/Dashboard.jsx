@@ -8,7 +8,6 @@ export default function Dashboard({ stats, recentActivity = [] }) {
         { title: 'Total Clients', value: stats?.totalClients || 0, change: '+0%', icon: <FiUsers />, color: 'bg-blue-500' },
         { title: 'Profils Actifs', value: stats?.activeProfiles || 0, change: '+0%', icon: <FiUserCheck />, color: 'bg-emerald-500' },
         { title: 'Contrats', value: stats?.openAssignments || 0, change: '+0%', icon: <FiBriefcase />, color: 'bg-indigo-500' },
-        { title: 'Chiffre d’Affaires', value: stats?.monthlyRevenue || '0 MAD', change: '+0%', icon: <FiTrendingUp />, color: 'bg-purple-500' },
     ];
 
     const translateStatus = (st) => {
@@ -33,7 +32,7 @@ export default function Dashboard({ stats, recentActivity = [] }) {
 
             <div className="space-y-6">
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {dashboardStats.map((stat, index) => (
                         <div key={index} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-gray-800/80 hover:shadow-lg transition-shadow duration-300">
                             <div className="flex justify-between items-start">

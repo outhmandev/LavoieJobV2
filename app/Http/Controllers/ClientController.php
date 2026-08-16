@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Assignment;
 use App\Models\Client;
 use App\Models\Profile;
+use App\Models\ManageableStatus;
 use App\Http\Requests\ClientRequest;
 use Inertia\Inertia;
 
@@ -63,7 +64,8 @@ class ClientController extends Controller
             ->pluck('statut')
             ->toArray();
 
-        $statuses = array_values(array_unique(array_merge(Client::STATUSES, $dbStatuses)));
+        $manageableStatuses = ManageableStatus::where('type', 'client')->pluck('name')->toArray();
+        $statuses = array_values(array_unique(array_merge($manageableStatuses, $dbStatuses)));
 
         return Inertia::render('Clients/Index', [
             'clients' => $clients,
@@ -84,7 +86,7 @@ class ClientController extends Controller
 
         return Inertia::render('Clients/Create', [
             'projects' => $projects,
-            'statuses' => Client::STATUSES,
+            'statuses' => ManageableStatus::where('type', 'client')->pluck('name'),
             'nextMatricule' => Client::generateNextMatricule(),
         ]);
     }
@@ -158,7 +160,7 @@ class ClientController extends Controller
             'projects' => $projects,
             'profiles' => $profiles,
             'assignedProfileIds' => $assignedProfileIds,
-            'statuses' => Client::STATUSES,
+            'statuses' => ManageableStatus::where('type', 'client')->pluck('name'),
         ]);
     }
 

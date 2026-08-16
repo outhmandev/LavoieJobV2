@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, Link, router } from '@inertiajs/react';
+import { Head, useForm, Link, router, usePage } from '@inertiajs/react';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import Dropdown from '@/Components/Dropdown';
@@ -8,6 +8,8 @@ import ChildrenDetailsEditor from '@/Components/ChildrenDetailsEditor';
 import LanguageSelector from '@/Components/LanguageSelector';
 import DomesticAnimalsSelector from '@/Components/DomesticAnimalsSelector';
 import DynamicSelect from '@/Components/DynamicSelect';
+import DiseaseSelector from '@/Components/DiseaseSelector';
+import GroupedMissionsManager from '@/Components/GroupedMissionsManager';
 import { FiArrowLeft, FiSave, FiCheckCircle, FiChevronRight, FiChevronLeft, FiUser, FiMapPin, FiBriefcase, FiHeart, FiFileText, FiMoreVertical, FiEdit2, FiTrash2, FiPlus, FiEye, FiDownload, FiFile, FiUploadCloud } from 'react-icons/fi';
 import { CLIENT_STATUSES, RECRUITMENT_SOURCES, C_MODE_OPTIONS, C_TYPE_CONTRAT_OPTIONS, C_EXPERIENCE_OPTIONS } from '@/constants';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,7 +35,11 @@ const formatDateForInput = (val) => {
     return s.substring(0, 10);
 };
 
-export default function Edit({ client, projects = [], profiles = [] }) {
+export default function Edit({ client, projects = [], profiles = [], statuses = [] }) {
+    const { auth } = usePage().props;
+    
+    const availableStatuses = Array.from(new Set([...(statuses || []), client.status, client.statut, client.c_statut].filter(Boolean)));
+
     const { data, setData, put, processing, errors } = useForm({
         c_nom: client?.c_nom || '', 
         mat: client?.mat || client?.c_mat || '',
@@ -71,6 +77,7 @@ export default function Edit({ client, projects = [], profiles = [] }) {
         c_mode: client?.c_mode || '',
         c_type_contrat: client?.c_type_contrat || '',
         c_experience: client?.c_experience || '',
+        blacklist_motif: client?.blacklist_motif || '',
     });
 
     const [currentStep, setCurrentStep] = useState(1);
@@ -130,6 +137,135 @@ export default function Edit({ client, projects = [], profiles = [] }) {
     const [[page, direction], setPage] = useState([1, 0]);
     const tabs = ['Mettre à jour', 'Historique', 'Suggestion des Profiles', 'Affectation', 'Réclamation', 'Document'];
     const [activeTab, setActiveTab] = useState('Mettre à jour');
+
+    // Dynamic data fetching for Historique and Documents
+    const [audits, setAudits] = useState([]);
+    const [documents, setDocuments] = useState([]);
+    const [reclamations, setReclamations] = useState([]);
+    const [loadingData, setLoadingData] = useState(false);
+    const [uploadingDoc, setUploadingDoc] = useState(false);
+    const [uploadType, setUploadType] = useState('CIN - Recto');
+
+    // Reclamation form state
+    const [isReclamationFormOpen, setIsReclamationFormOpen] = useState(false);
+    const [reclamationForm, setReclamationForm] = useState({
+        profil_litigieux: '',
+        description: '',
+        resolu: false,
+        date_reclamation: new Date().toISOString().slice(0, 16) // datetime-local format YYYY-MM-DDThh:mm
+    });
+    const [submittingReclamation, setSubmittingReclamation] = useState(false);
+
+    React.useEffect(() => {
+        if (activeTab === 'Historique') {
+            setLoadingData(true);
+            window.axios.get(route('admin.audits.model', { model: 'Client', id: client.id }))
+                .then(res => setAudits(res.data))
+                .catch(err => console.error(err))
+                .finally(() => setLoadingData(false));
+        } else if (activeTab === 'Document') {
+            setLoadingData(true);
+            window.axios.get(route('documents.index', { documentable_type: 'Client', documentable_id: client.id }))
+                .then(res => setDocuments(res.data))
+                .catch(err => console.error(err))
+                .finally(() => setLoadingData(false));
+        } else if (activeTab === 'Réclamation') {
+            setLoadingData(true);
+            window.axios.get(route('reclamations.index', { client_id: client.id }))
+                .then(res => setReclamations(res.data))
+                .catch(err => console.error(err))
+                .finally(() => setLoadingData(false));
+        }
+    }, [activeTab, client.id]);
+
+    const handleReclamationSubmit = (e) => {
+        e.preventDefault();
+        setSubmittingReclamation(true);
+        window.axios.post(route('reclamations.store'), {
+            client_id: client.id,
+            ...reclamationForm
+        })
+        .then(res => {
+            setReclamations([res.data.reclamation, ...reclamations]);
+            setIsReclamationFormOpen(false);
+            setReclamationForm({ profil_litigieux: '', description: '', resolu: false, date_reclamation: new Date().toISOString().slice(0, 16) });
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Erreur lors de la création de la réclamation.");
+        })
+        .finally(() => setSubmittingReclamation(false));
+    };
+
+    const handleUpdateReclamationStatus = (reclamationId, isResolu) => {
+        window.axios.put(route('reclamations.update', reclamationId), { resolu: isResolu })
+            .then(res => {
+                setReclamations(reclamations.map(r => r.id === reclamationId ? { ...r, resolu: isResolu } : r));
+            })
+            .catch(err => console.error(err));
+    };
+
+    const handleDeleteReclamation = (reclamationId) => {
+        if (!window.confirm("Voulez-vous supprimer cette réclamation ?")) return;
+        window.axios.delete(route('reclamations.destroy', reclamationId))
+            .then(() => {
+                setReclamations(reclamations.filter(r => r.id !== reclamationId));
+            })
+            .catch(err => console.error(err));
+    };
+
+    const handleFileUpload = (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+
+        setUploadingDoc(true);
+        
+        let typeToUse = uploadType;
+        if (uploadType === 'CIN (Recto & Verso)') {
+            typeToUse = 'CIN';
+        }
+
+        const uploadPromises = files.map((file, index) => {
+            const formData = new FormData();
+            formData.append('documentable_type', 'Client');
+            formData.append('documentable_id', client.id);
+            
+            let specificType = typeToUse;
+            if (uploadType === 'CIN (Recto & Verso)') {
+                specificType = index === 0 ? 'CIN - Recto' : 'CIN - Verso';
+            }
+            
+            formData.append('type', specificType);
+            formData.append('file', file);
+
+            return window.axios.post(route('documents.store'), formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+        });
+
+        Promise.all(uploadPromises)
+            .then(responses => {
+                const newDocs = responses.map(res => res.data.document).reverse();
+                setDocuments([...newDocs, ...documents]);
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Erreur lors de l'upload des documents.");
+            })
+            .finally(() => {
+                setUploadingDoc(false);
+                e.target.value = null; // reset input
+            });
+    };
+
+    const handleDeleteDoc = (docId) => {
+        if (!window.confirm("Voulez-vous supprimer ce document ?")) return;
+        window.axios.delete(route('documents.destroy', docId))
+            .then(() => {
+                setDocuments(documents.filter(d => d.id !== docId));
+            })
+            .catch(err => console.error(err));
+    };
 
 
     const navigateStep = (newStep) => {
@@ -399,11 +535,32 @@ export default function Edit({ client, projects = [], profiles = [] }) {
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="space-y-2">
                                                     <InputLabel value="Statut" className="text-gray-600 dark:text-gray-400" />
-                                                    <select value={data.status} onChange={e => setData('status', e.target.value)} className="w-full bg-gray-50 dark:bg-gray-800  border-gray-200/50 dark:border-gray-700/50 rounded-xl text-gray-700 dark:text-gray-300">
-                                                        <option value="active">Actif</option>
-                                                        <option value="inactive">Inactif</option>
+                                                    <select
+                                                        value={data.status || data.statut || data.c_statut}
+                                                        onChange={e => {
+                                                            setData('status', e.target.value);
+                                                            setData('statut', e.target.value);
+                                                            setData('c_statut', e.target.value);
+                                                        }}
+                                                        className="w-full bg-gray-50 dark:bg-gray-800 border-gray-200/50 dark:border-gray-700/50 rounded-xl text-gray-700 dark:text-gray-300"
+                                                    >
+                                                        {availableStatuses.map(st => (
+                                                            <option key={st} value={st}>{st}</option>
+                                                        ))}
                                                     </select>
                                                 </div>
+                                                {(data.status === 'Black liste' || data.statut === 'Black liste' || data.c_statut === 'Black liste') && (
+                                                    <div className="space-y-2 col-span-2">
+                                                        <InputLabel value="Motif de la mise sur Black Liste" className="text-red-600 dark:text-red-400 font-bold" />
+                                                        <textarea
+                                                            value={data.blacklist_motif}
+                                                            onChange={e => setData('blacklist_motif', e.target.value)}
+                                                            className="w-full bg-red-50 dark:bg-red-900/10 rounded-xl border-red-200 dark:border-red-800/50 text-red-900 dark:text-red-300 min-h-[80px]"
+                                                            placeholder="Veuillez spécifier la raison..."
+                                                            required
+                                                        ></textarea>
+                                                    </div>
+                                                )}
                                                 <div className="space-y-2">
                                                     <InputLabel value="Source" className="text-gray-600 dark:text-gray-400" />
                                                     <DynamicSelect 
@@ -490,6 +647,33 @@ export default function Edit({ client, projects = [], profiles = [] }) {
                                                 {!selectedProject && <p className="text-xs text-gray-400 mt-1 italic">Veuillez d'abord sélectionner un projet.</p>}
                                             </div>
 
+                                            {(selectedProject?.name === 'LALLA GHALIA' || selectedProject?.name === 'LALLA LGHALIA') && 
+                                             ['NOUBONNE', 'NOUNOU', 'NOUNOU OCCASIONNELLE', 'NOUBONNE OCCASIONNELLE'].includes(data.c_fonction) && (
+                                                <div className="grid grid-cols-2 gap-4 md:col-span-2 p-4 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-100 dark:border-purple-800/30">
+                                                    <div className="space-y-2">
+                                                        <InputLabel value="Tranche d'âge possible de garder" className="text-gray-600 dark:text-gray-400" />
+                                                        <select value={data.tranche_age} onChange={e => setData('tranche_age', e.target.value)} className="w-full bg-white dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 h-12">
+                                                            <option value="">-- Sélectionnez --</option>
+                                                            <option value="0 - 1 an">0 - 1 an</option>
+                                                            <option value="1 - 3 ans">1 - 3 ans</option>
+                                                            <option value="3 - 6 ans">3 - 6 ans</option>
+                                                            <option value="6 - 10 ans">6 - 10 ans</option>
+                                                            <option value="+ 10 ans">+ 10 ans</option>
+                                                        </select>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <InputLabel value="Combien d'enfants avez-vous ?" className="text-gray-600 dark:text-gray-400" />
+                                                        <select value={data.enfants_gardes} onChange={e => setData('enfants_gardes', e.target.value)} className="w-full bg-white dark:bg-gray-800 rounded-xl border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300 h-12">
+                                                            <option value="">-- Sélectionnez --</option>
+                                                            <option value="1">1 enfant</option>
+                                                            <option value="2">2 enfants</option>
+                                                            <option value="3">3 enfants</option>
+                                                            <option value="4+">4 et plus</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             <div className="space-y-2">
                                                 <InputLabel value="Mode d'emploi" className="text-gray-600 dark:text-gray-400" />
                                                 <DynamicSelect 
@@ -532,34 +716,11 @@ export default function Edit({ client, projects = [], profiles = [] }) {
                                                         Aucun critère spécifique configuré pour ce projet.
                                                     </div>
                                                 ) : (
-                                                    <div className="grid grid-cols-1 gap-4">
-                                                        {Object.entries(selectedProject.grouped_missions).map(([group, missions]) => (
-                                                            <div key={group} className="bg-white/60 dark:bg-gray-800/40 rounded-2xl p-5 border border-emerald-100 dark:border-emerald-900/30 shadow-sm">
-                                                                <h4 className="font-bold text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-3">{group}</h4>
-                                                                <div className="flex flex-wrap gap-2">
-                                                                    {missions.map(mission => {
-                                                                        const isSelected = (data.missions || []).includes(mission);
-                                                                        return (
-                                                                            <button
-                                                                                key={mission}
-                                                                                type="button"
-                                                                                onClick={() => handleMissionToggle(mission)}
-                                                                                className={cn(
-                                                                                    "px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border-2 flex items-center gap-1.5",
-                                                                                    isSelected 
-                                                                                        ? "bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm" 
-                                                                                        : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-emerald-300"
-                                                                                )}
-                                                                            >
-                                                                                <span>{isSelected ? '✓' : '+'}</span>
-                                                                                {mission}
-                                                                            </button>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
+                                                    <GroupedMissionsManager
+                                                        groupedMissions={selectedProject.grouped_missions || {}}
+                                                        selectedMissions={data.missions || []}
+                                                        onChange={(newMissions) => setData('missions', newMissions)}
+                                                    />
                                                 )}
                                             </div>
 
@@ -865,7 +1026,9 @@ export default function Edit({ client, projects = [], profiles = [] }) {
                                         )}
                                     </div>
                                 </div>
-                            )}\n\n                            {activeTab === 'Affectation' && (
+                            )}
+
+                            {activeTab === 'Affectation' && (
                                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-gray-800/80">
                                     <div className="p-6 flex justify-between items-center border-b border-gray-100 dark:border-gray-800">
                                         <h3 className="font-bold text-gray-900 dark:text-white text-lg">Affectations du Client</h3>
@@ -948,9 +1111,185 @@ export default function Edit({ client, projects = [], profiles = [] }) {
                                 </div>
                             )}
 
-                            {['Historique', 'Réclamation'].includes(activeTab) && (
-                                <div className="p-12 text-center bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800/50 rounded-2xl shadow-sm text-gray-500">
-                                    <p className="font-bold">Module {activeTab} en cours de développement</p>
+                            {activeTab === 'Historique' && (
+                                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800/50 rounded-2xl shadow-sm p-6 print:hidden">
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Historique des modifications</h3>
+                                    {loadingData ? (
+                                        <div className="text-center py-8 text-gray-500">Chargement de l'historique...</div>
+                                    ) : audits.length > 0 ? (
+                                        <div className="space-y-6">
+                                            {audits.map(audit => (
+                                                <div key={audit.id} className="flex gap-4">
+                                                    <div className="flex flex-col items-center">
+                                                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                                            <FiUser size={14} />
+                                                        </div>
+                                                        <div className="w-px h-full bg-gray-200 dark:bg-gray-800 mt-2"></div>
+                                                    </div>
+                                                    <div className="pb-6 w-full">
+                                                        <p className="text-sm font-bold text-gray-900 dark:text-white">
+                                                            {audit.user?.name || 'Système'} <span className="text-gray-500 font-normal">a effectué une modification</span>
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 mb-3">{new Date(audit.created_at).toLocaleString('fr-FR')}</p>
+                                                        <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                                                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Champs modifiés :</p>
+                                                            <ul className="space-y-2">
+                                                                {Object.keys(audit.new_values || {}).map(key => (
+                                                                    <li key={key} className="text-xs flex flex-wrap gap-2 items-center">
+                                                                        <span className="font-medium text-gray-600 dark:text-gray-400">{key}:</span>
+                                                                        {(audit.old_values || {})[key] && (
+                                                                            <span className="line-through text-red-500 bg-red-50 dark:bg-red-900/20 px-1 rounded">{String((audit.old_values || {})[key])}</span>
+                                                                        )}
+                                                                        <span className="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-1 rounded">{String((audit.new_values || {})[key])}</span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-8 text-gray-500">Aucun historique disponible pour ce client.</div>
+                                    )}
+                                </div>
+                            )}
+
+                            {activeTab === 'Réclamation' && (
+                                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800/50 rounded-2xl shadow-sm p-6 print:hidden space-y-6">
+                                    <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-4">
+                                        <div>
+                                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Gestion des Réclamations</h3>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">Suivi et historique des plaintes et requêtes.</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => setIsReclamationFormOpen(!isReclamationFormOpen)}
+                                            className="px-4 py-2 bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-900/50 font-bold rounded-xl text-sm transition-colors flex items-center gap-2"
+                                        >
+                                            {isReclamationFormOpen ? 'Annuler' : <><FiPlus /> Nouvelle Réclamation</>}
+                                        </button>
+                                    </div>
+
+                                    {isReclamationFormOpen && (
+                                        <div className="bg-gray-50 dark:bg-gray-800/30 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 mb-6">
+                                            <h4 className="font-bold text-gray-900 dark:text-white mb-4">Ajouter une réclamation</h4>
+                                            <form onSubmit={handleReclamationSubmit} className="space-y-4">
+                                                <div>
+                                                    <InputLabel value="Profil litigieux *" />
+                                                    <TextInput 
+                                                        type="text" 
+                                                        className="w-full mt-1 block" 
+                                                        value={reclamationForm.profil_litigieux}
+                                                        onChange={e => setReclamationForm({...reclamationForm, profil_litigieux: e.target.value})}
+                                                        required 
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <InputLabel value="Décrivez en détails le problème survenu et les solutions proposées. *" />
+                                                    <textarea 
+                                                        className="w-full mt-1 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                                                        rows="4"
+                                                        value={reclamationForm.description}
+                                                        onChange={e => setReclamationForm({...reclamationForm, description: e.target.value})}
+                                                        required
+                                                    ></textarea>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div>
+                                                        <InputLabel value="Date de réclamation *" />
+                                                        <TextInput 
+                                                            type="datetime-local" 
+                                                            className="w-full mt-1 block" 
+                                                            value={reclamationForm.date_reclamation}
+                                                            onChange={e => setReclamationForm({...reclamationForm, date_reclamation: e.target.value})}
+                                                            required 
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <InputLabel value="Problème résolu? *" />
+                                                        <div className="mt-2 flex gap-4">
+                                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                                <input 
+                                                                    type="radio" 
+                                                                    name="resolu"
+                                                                    checked={reclamationForm.resolu === true}
+                                                                    onChange={() => setReclamationForm({...reclamationForm, resolu: true})}
+                                                                    className="text-indigo-600 focus:ring-indigo-500"
+                                                                />
+                                                                <span className="text-gray-700 dark:text-gray-300">Oui</span>
+                                                            </label>
+                                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                                <input 
+                                                                    type="radio" 
+                                                                    name="resolu"
+                                                                    checked={reclamationForm.resolu === false}
+                                                                    onChange={() => setReclamationForm({...reclamationForm, resolu: false})}
+                                                                    className="text-indigo-600 focus:ring-indigo-500"
+                                                                />
+                                                                <span className="text-gray-700 dark:text-gray-300">Non</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-end pt-2">
+                                                    <button 
+                                                        type="submit" 
+                                                        disabled={submittingReclamation}
+                                                        className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-colors disabled:opacity-50"
+                                                    >
+                                                        {submittingReclamation ? 'Enregistrement...' : 'Enregistrer la réclamation'}
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-4">
+                                        {loadingData ? (
+                                            <div className="text-center text-gray-500 py-4">Chargement des réclamations...</div>
+                                        ) : reclamations.length > 0 ? (
+                                            reclamations.map(reclamation => (
+                                                <div key={reclamation.id} className="p-4 border border-gray-100 dark:border-gray-800 rounded-xl flex flex-col md:flex-row gap-4 justify-between bg-white dark:bg-gray-800/50 hover:border-rose-200 dark:hover:border-rose-800 transition-colors">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-3 mb-2">
+                                                            <h4 className="font-bold text-gray-900 dark:text-white">{reclamation.profil_litigieux || 'Profil non spécifié'}</h4>
+                                                            <span className={`text-xs px-2 py-1 rounded-full font-bold ${
+                                                                reclamation.resolu ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400' : 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-400'
+                                                            }`}>
+                                                                {reclamation.resolu ? 'Problème Résolu' : 'Non Résolu'}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 whitespace-pre-wrap">{reclamation.description || 'Aucune description fournie.'}</p>
+                                                        <p className="text-xs text-gray-500">Créée le {new Date(reclamation.date_reclamation || reclamation.created_at).toLocaleString('fr-FR')}</p>
+                                                    </div>
+                                                    
+                                                    <div className="flex flex-col items-end gap-2 border-t md:border-t-0 md:border-l border-gray-100 dark:border-gray-800 pt-3 md:pt-0 md:pl-4 min-w-[140px]">
+                                                        <select 
+                                                            className={`text-sm font-bold border-0 bg-gray-50 dark:bg-gray-900 rounded-lg pr-8 py-1.5 focus:ring-2 ${
+                                                                reclamation.resolu ? 'text-emerald-600 focus:ring-emerald-500' : 'text-rose-600 focus:ring-rose-500'
+                                                            }`}
+                                                            value={reclamation.resolu ? 'oui' : 'non'}
+                                                            onChange={(e) => handleUpdateReclamationStatus(reclamation.id, e.target.value === 'oui')}
+                                                        >
+                                                            <option value="oui">Résolue</option>
+                                                            <option value="non">Non résolue</option>
+                                                        </select>
+
+                                                        <button 
+                                                            onClick={() => handleDeleteReclamation(reclamation.id)}
+                                                            className="text-xs text-gray-400 hover:text-rose-600 flex items-center gap-1 mt-auto transition-colors"
+                                                        >
+                                                            <FiTrash2 size={12} /> Supprimer
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-center text-gray-500 py-8 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                                                Aucune réclamation enregistrée.
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
@@ -961,52 +1300,63 @@ export default function Edit({ client, projects = [], profiles = [] }) {
                                             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Documents & Fichiers</h3>
                                             <p className="text-sm text-gray-500 dark:text-gray-400">Gérez la CIN, passeport, contrat et autres documents liés à ce client.</p>
                                         </div>
-                                        <button className="px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 font-bold rounded-xl text-sm transition-colors flex items-center gap-2">
-                                            <FiPlus /> Ajouter un document
-                                        </button>
                                     </div>
+                                    
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {/* Mocked Document Cards */}
-                                        <div className="p-4 border border-gray-100 dark:border-gray-800 rounded-xl flex items-start justify-between group hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors bg-gray-50 dark:bg-gray-800/50">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                                                    <FiFile size={20} />
+                                        {loadingData ? (
+                                            <div className="col-span-2 text-center text-gray-500 py-4">Chargement des documents...</div>
+                                        ) : documents.length > 0 ? (
+                                            documents.map(doc => (
+                                                <div key={doc.id} className="p-4 border border-gray-100 dark:border-gray-800 rounded-xl flex items-start justify-between group hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors bg-gray-50 dark:bg-gray-800/50">
+                                                    <div className="flex items-center gap-4 truncate">
+                                                        <div className="w-10 h-10 shrink-0 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                                                            <FiFileText size={20} />
+                                                        </div>
+                                                        <div className="truncate">
+                                                            <p className="font-bold text-gray-900 dark:text-white text-sm truncate">{doc.type}</p>
+                                                            <p className="text-xs text-gray-500 truncate" title={doc.file_name}>{doc.file_name} • {(doc.size / 1024 / 1024).toFixed(2)} MB</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <a href={route('documents.show', doc.id)} target="_blank" rel="noreferrer" className="p-2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700" title="Voir"><FiEye size={14} /></a>
+                                                        <a href={route('documents.download', doc.id)} className="p-2 text-gray-500 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-400 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700" title="Télécharger"><FiDownload size={14} /></a>
+                                                        <button onClick={() => handleDeleteDoc(doc.id)} className="p-2 text-gray-500 hover:text-rose-600 dark:text-gray-400 dark:hover:text-rose-400 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700" title="Supprimer"><FiTrash2 size={14} /></button>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="font-bold text-gray-900 dark:text-white text-sm">CIN_recto_verso.jpg</p>
-                                                    <p className="text-xs text-gray-500">Ajouté récemment • 1.1 MB</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button className="p-2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"><FiEye size={14} /></button>
-                                                <button className="p-2 text-gray-500 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-400 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"><FiDownload size={14} /></button>
-                                            </div>
-                                        </div>
-                                        <div className="p-4 border border-gray-100 dark:border-gray-800 rounded-xl flex items-start justify-between group hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors bg-gray-50 dark:bg-gray-800/50">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                                                    <FiFileText size={20} />
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-gray-900 dark:text-white text-sm">Contrat_{client.nom || client.c_nom || 'Client'}.pdf</p>
-                                                    <p className="text-xs text-gray-500">Généré le {client.created_at ? new Date(client.created_at).toLocaleDateString('fr-FR') : 'Récemment'} • 1.8 MB</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button className="p-2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"><FiEye size={14} /></button>
-                                                <button className="p-2 text-gray-500 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-400 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"><FiDownload size={14} /></button>
-                                            </div>
-                                        </div>
+                                            ))
+                                        ) : (
+                                            <div className="col-span-2 text-center text-gray-500 py-4">Aucun document uploadé.</div>
+                                        )}
                                     </div>
                                     
                                     {/* Upload Area */}
-                                    <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-8 text-center hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all cursor-pointer group relative overflow-hidden">
-                                        <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" title="Uploader un fichier" />
-                                        <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform rounded-xl flex items-center justify-center mx-auto mb-4">
-                                            <FiUploadCloud size={24} />
+                                    <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl p-8 text-center bg-gray-50/50 dark:bg-gray-800/20">
+                                        <div className="max-w-xs mx-auto mb-4">
+                                            <InputLabel value="Type de document" />
+                                            <select 
+                                                value={uploadType} 
+                                                onChange={(e) => setUploadType(e.target.value)}
+                                                className="w-full mt-1 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                                            >
+                                                <option>CIN (Recto & Verso)</option>
+                                                <option>CIN - Recto</option>
+                                                <option>CIN - Verso</option>
+                                                <option>Passeport</option>
+                                                <option>Contrat</option>
+                                                <option>Autre</option>
+                                            </select>
                                         </div>
-                                        <h4 className="font-bold text-gray-900 dark:text-white mb-1">Cliquez ou glissez-déposez des fichiers ici</h4>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">PDF, JPG, PNG (Max 5MB)</p>
+
+                                        <div className="relative group cursor-pointer w-full inline-block mt-2">
+                                            <input type="file" multiple onChange={handleFileUpload} disabled={uploadingDoc} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" title={uploadType === 'CIN (Recto & Verso)' ? 'Sélectionnez le recto et le verso (2 fichiers)' : 'Uploader un fichier'} />
+                                            <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform rounded-xl flex items-center justify-center mx-auto mb-4">
+                                                {uploadingDoc ? <span className="animate-spin text-xl">⏳</span> : <FiUploadCloud size={24} />}
+                                            </div>
+                                            <h4 className="font-bold text-gray-900 dark:text-white mb-1">
+                                                {uploadingDoc ? 'Upload en cours...' : 'Cliquez ou glissez-déposez des fichiers ici'}
+                                            </h4>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">PDF, JPG, PNG (Max 10MB)</p>
+                                        </div>
                                     </div>
                                 </div>
                             )}

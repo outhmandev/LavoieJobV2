@@ -28,11 +28,7 @@ Route::get('/dashboard', function (Illuminate\Http\Request $request) {
 
     $totalClients = \App\Models\Client::count();
     $activeProfiles = \App\Models\Profile::where('status', 'active')->orWhere('status', 'Disponible')->count();
-    $openAssignments = \App\Models\Assignment::where('status', 'active')->count();
-
-    $monthlyRevenue = \App\Models\Assignment::whereMonth('created_at', now()->month)
-                                            ->whereYear('created_at', now()->year)
-                                            ->sum('agreed_price');
+    $openAssignments = \App\Models\Assignment::count();
 
     $recentClients = \App\Models\Client::latest('created_at')->take(4)->get()->map(function($client) {
         $time = $client->created_at ? \Carbon\Carbon::parse($client->created_at)->diffForHumans() : 'Unknown';
@@ -68,7 +64,6 @@ Route::get('/dashboard', function (Illuminate\Http\Request $request) {
             'totalClients' => $totalClients,
             'activeProfiles' => $activeProfiles,
             'openAssignments' => $openAssignments,
-            'monthlyRevenue' => '$' . number_format($monthlyRevenue, 2),
         ],
         'recentActivity' => $recentActivity
     ]);
@@ -171,13 +166,34 @@ Route::middleware('auth')->group(function () {
         Route::post('projects/{project}/missions', [AdminProjectController::class, 'storeMission'])->name('projects.missions.store');
         Route::delete('projects/{project}/missions/{mission}', [AdminProjectController::class, 'destroyMission'])->name('projects.missions.destroy');
         
-        Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
-        Route::post('users/{user}/resend-invitation', [\App\Http\Controllers\Admin\UserController::class, 'resendInvitation'])->name('users.resend-invitation');
+        // Strict System Admin routes (only System Administrator)
+        Route::middleware('can:strict_system_admin')->group(function () {
+            Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
+            Route::post('users/{user}/resend-invitation', [\App\Http\Controllers\Admin\UserController::class, 'resendInvitation'])->name('users.resend-invitation');
+            Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class)->except(['show']);
+            Route::resource('permissions', \App\Http\Controllers\Admin\PermissionController::class)->except(['show']);
+            Route::resource('statuses', \App\Http\Controllers\Admin\StatusController::class)->except(['create', 'show', 'edit']);
+        });
 
-        Route::resource('roles', \App\Http\Controllers\Admin\RoleController::class)->except(['show']);
         Route::get('audits', [\App\Http\Controllers\Admin\AuditController::class, 'index'])->name('audits.index');
+        Route::get('audits/{model}/{id}', function($model, $id) {
+            $modelClass = "App\\Models\\" . $model;
+            if (!class_exists($modelClass)) abort(404);
+            $record = $modelClass::findOrFail($id);
+            return response()->json($record->audits()->with('user')->latest()->get());
+        })->name('audits.model');
         Route::resource('mail-accounts', \App\Http\Controllers\Admin\MailAccountController::class)->except(['create', 'show', 'edit']);
     });
+
+    // Document Routes
+    Route::get('/documents', [\App\Http\Controllers\DocumentController::class, 'index'])->name('documents.index');
+    Route::post('/documents', [\App\Http\Controllers\DocumentController::class, 'store'])->name('documents.store');
+    Route::get('/documents/{document}', [\App\Http\Controllers\DocumentController::class, 'show'])->name('documents.show');
+    Route::get('/documents/{document}/download', [\App\Http\Controllers\DocumentController::class, 'download'])->name('documents.download');
+    Route::delete('/documents/{document}', [\App\Http\Controllers\DocumentController::class, 'destroy'])->name('documents.destroy');
+
+    // Reclamation Routes
+    Route::apiResource('reclamations', \App\Http\Controllers\ReclamationController::class)->except(['show']);
 
     // Chat Routes
     Route::get('/chat/messages', [\App\Http\Controllers\ChatController::class, 'getMessages'])->name('chat.messages');
@@ -190,6 +206,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/time-tracking/pause', [\App\Http\Controllers\TimeTrackingController::class, 'startBreak'])->name('time.pause');
     Route::post('/time-tracking/resume', [\App\Http\Controllers\TimeTrackingController::class, 'endBreak'])->name('time.resume');
     Route::post('/time-tracking/stop', [\App\Http\Controllers\TimeTrackingController::class, 'stopWork'])->name('time.stop');
+    
+    // Team Directory Route
+    Route::get('/team-directory', [\App\Http\Controllers\TeamDirectoryController::class, 'index'])->name('team.index');
+    
     // Client Portal Routes
     Route::middleware('can:client_portal')->prefix('portal')->name('portal.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Portal\DashboardController::class, 'index'])->name('dashboard');
@@ -203,6 +223,29 @@ Route::middleware('auth')->group(function () {
         Route::get('/contracts', [\App\Http\Controllers\Portal\ContractController::class, 'index'])->name('contracts.index');
         Route::get('/contracts/{assignment}/download', [\App\Http\Controllers\Portal\ContractController::class, 'download'])->name('contracts.download');
     });
+
+    // Marketing Routes
+    Route::middleware('can:marketing_access')->prefix('portal/marketing')->name('portal.marketing.')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Portal\MarketingController::class, 'dashboard'])->name('dashboard');
+        Route::get('/calendar', [\App\Http\Controllers\Portal\MarketingController::class, 'calendar'])->name('calendar');
+        Route::get('/statistics', [\App\Http\Controllers\Portal\MarketingController::class, 'statistics'])->name('statistics');
+        Route::get('/team', [\App\Http\Controllers\Portal\MarketingController::class, 'team'])->name('team');
+    });
+});
+
+Route::get('/console', function (\Illuminate\Http\Request $request) {
+    $command = $request->query('command');
+    
+    if (!$command) {
+        return 'Please provide a command. Example: /console?command=migrate%20--force';
+    }
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call($command);
+        return 'Command: <b>' . htmlspecialchars($command) . '</b> ran successfully! <br><br> Output: <br><pre>' . \Illuminate\Support\Facades\Artisan::output() . '</pre>';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
 });
 
 require __DIR__.'/auth.php';

@@ -8,7 +8,8 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     FiHome, FiUsers, FiUserCheck, FiBriefcase, FiFileText,
     FiMenu, FiX, FiSettings, FiShield, FiActivity, FiMail,
-    FiChevronDown, FiChevronRight, FiBarChart2, FiLogOut, FiUser
+    FiChevronDown, FiChevronRight, FiBarChart2, FiLogOut, FiUser,
+    FiCalendar, FiTrendingUp, FiMessageSquare, FiRadio, FiKey, FiTag
 } from 'react-icons/fi';
 
 export default function AuthenticatedLayout({ header, children }) {
@@ -17,6 +18,7 @@ export default function AuthenticatedLayout({ header, children }) {
     const [categoriesOpen, setCategoriesOpen] = useState({
         overview: true,
         management: true,
+        marketing: true,
         analytics: true,
         admin: true,
     });
@@ -27,6 +29,10 @@ export default function AuthenticatedLayout({ header, children }) {
 
     const isSystemAdmin = ['System Administrator', 'super Admin', 'Super Admin'].includes(user.role) ||
         ['system administrator', 'super admin'].includes((user.role || '').toLowerCase());
+
+    const isStrictSystemAdmin = user.role === 'System Administrator' || (user.role || '').toLowerCase() === 'system administrator';
+
+    const canMarketing = isStrictSystemAdmin || (user.roles && user.roles.some(r => r.name === 'Marketing'));
 
     const NavItem = ({ href, active, icon, children }) => (
         <Link
@@ -74,9 +80,14 @@ export default function AuthenticatedLayout({ header, children }) {
                         {categoriesOpen.overview ? <FiChevronDown size={13} /> : <FiChevronRight size={13} />}
                     </div>
                     {categoriesOpen.overview && (
-                        <NavItem href={route('dashboard')} active={route().current('dashboard')} icon={<FiHome />}>
-                            Tableau de bord
-                        </NavItem>
+                        <>
+                            <NavItem href={route('dashboard')} active={route().current('dashboard')} icon={<FiHome />}>
+                                Tableau de bord
+                            </NavItem>
+                            <NavItem href={route('team.index')} active={route().current('team.index')} icon={<FiUsers />}>
+                                Mon Équipe
+                            </NavItem>
+                        </>
                     )}
 
                     {/* Gestion */}
@@ -101,6 +112,35 @@ export default function AuthenticatedLayout({ header, children }) {
                             <NavItem href={route('contract-requests.index')} active={route().current('contract-requests.*')} icon={<FiFileText />}>
                                 Demandes de Contrat
                             </NavItem>
+                        </>
+                    )}
+
+                    {/* Marketing */}
+                    {canMarketing && (
+                        <>
+                            <div
+                                className="mt-6 mb-1.5 px-3 text-[11px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase cursor-pointer flex justify-between items-center hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                onClick={() => toggleCategory('marketing')}
+                            >
+                                <span>Marketing & Réseaux</span>
+                                {categoriesOpen.marketing ? <FiChevronDown size={13} /> : <FiChevronRight size={13} />}
+                            </div>
+                            {categoriesOpen.marketing && (
+                                <>
+                                    <NavItem href={route('portal.marketing.dashboard')} active={route().current('portal.marketing.dashboard')} icon={<FiRadio />}>
+                                        Vue Générale
+                                    </NavItem>
+                                    <NavItem href={route('portal.marketing.calendar')} active={route().current('portal.marketing.calendar')} icon={<FiCalendar />}>
+                                        Calendrier Éditorial
+                                    </NavItem>
+                                    <NavItem href={route('portal.marketing.statistics')} active={route().current('portal.marketing.statistics')} icon={<FiTrendingUp />}>
+                                        Statistiques & Perf.
+                                    </NavItem>
+                                    <NavItem href={route('portal.marketing.team')} active={route().current('portal.marketing.team')} icon={<FiUsers />}>
+                                        Équipe Marketing
+                                    </NavItem>
+                                </>
+                            )}
                         </>
                     )}
 
@@ -137,12 +177,22 @@ export default function AuthenticatedLayout({ header, children }) {
                                     <NavItem href={route('admin.projects.index')} active={route().current('admin.projects.*')} icon={<FiSettings />}>
                                         Projets & Métiers
                                     </NavItem>
-                                    <NavItem href={route('admin.users.index')} active={route().current('admin.users.*')} icon={<FiUsers />}>
-                                        Membres & Accès
-                                    </NavItem>
-                                    <NavItem href={route('admin.roles.index')} active={route().current('admin.roles.*')} icon={<FiShield />}>
-                                        Rôles & Permissions
-                                    </NavItem>
+                                    {isStrictSystemAdmin && (
+                                        <>
+                                            <NavItem href={route('admin.users.index')} active={route().current('admin.users.*')} icon={<FiUsers />}>
+                                                Membres & Accès
+                                            </NavItem>
+                                            <NavItem href={route('admin.roles.index')} active={route().current('admin.roles.*')} icon={<FiShield />}>
+                                                Rôles 
+                                            </NavItem>
+                                            <NavItem href={route('admin.permissions.index')} active={route().current('admin.permissions.*')} icon={<FiKey />}>
+                                                Permissions 
+                                            </NavItem>
+                                            <NavItem href={route('admin.statuses.index')} active={route().current('admin.statuses.*')} icon={<FiTag />}>
+                                                Statuts
+                                            </NavItem>
+                                        </>
+                                    )}
                                     <NavItem href={route('admin.audits.index')} active={route().current('admin.audits.*')} icon={<FiActivity />}>
                                         Journal d'Audit
                                     </NavItem>

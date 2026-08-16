@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Profile;
+use App\Models\ManageableStatus;
 use App\Http\Requests\ProfileRequest;
 use Inertia\Inertia;
 
@@ -37,11 +38,7 @@ class CandidateProfileController extends Controller
             $q->where('matricule', $val);
         })
         ->when($request->filled('nom'), function($q) use ($request) {
-            $q->where(function($subQ) use ($request) {
-                $subQ->where('full_name', 'like', '%' . $request->nom . '%')
-                     ->orWhere('first_name', 'like', '%' . $request->nom . '%')
-                     ->orWhere('last_name', 'like', '%' . $request->nom . '%');
-            });
+            $q->where('full_name', 'like', '%' . $request->nom . '%');
         })
         ->when($request->filled('ville'), function($q) use ($request) {
             $q->where('current_city', 'like', '%' . $request->ville . '%')
@@ -65,7 +62,8 @@ class CandidateProfileController extends Controller
             ->pluck('status')
             ->toArray();
 
-        $statuses = array_values(array_unique(array_merge(Profile::STATUSES, $dbStatuses)));
+        $manageableStatuses = ManageableStatus::where('type', 'profile')->pluck('name')->toArray();
+        $statuses = array_values(array_unique(array_merge($manageableStatuses, $dbStatuses)));
 
         return Inertia::render('Profiles/Index', [
             'profiles' => $profiles,
@@ -85,7 +83,7 @@ class CandidateProfileController extends Controller
 
         return Inertia::render('Profiles/Create', [
             'projects' => $projects,
-            'statuses' => Profile::STATUSES,
+            'statuses' => ManageableStatus::where('type', 'profile')->pluck('name'),
             'nextMatricule' => Profile::generateNextMatricule(),
         ]);
     }
@@ -145,7 +143,35 @@ class CandidateProfileController extends Controller
         unset($data['mode_emploi'], $data['type_contrat'], $data['repos'], $data['missions'], $data['salary_period']);
         unset($data['nom'], $data['mat'], $data['statut'], $data['file_img'], $data['date_naissance'], $data['ville_o'], $data['nationalite'], $data['niveau'], $data['situation_familiale'], $data['nombre_enfant'], $data['enfants_details'], $data['adresse_cin'], $data['ville_origin'], $data['current_adresse'], $data['gsm1'], $data['gsm2'], $data['gsm_1'], $data['gsm_2'], $data['fonction']);
 
-        Profile::create($data);
+        if (isset($data['avatar']) && $data['avatar'] instanceof \Illuminate\Http\UploadedFile) {
+            $data['avatar'] = $data['avatar']->store('avatars', 'public');
+        }
+
+        $profile = Profile::create($data);
+
+        if ($request->hasFile('cin_files')) {
+            foreach ($request->file('cin_files') as $index => $file) {
+                $profile->documents()->create([
+                    'type' => 'CIN - ' . ($index === 0 ? 'Recto' : 'Verso'),
+                    'file_path' => $file->store('documents', 'public'),
+                    'file_name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType(),
+                ]);
+            }
+        }
+
+        if ($request->hasFile('cv_file')) {
+            $file = $request->file('cv_file');
+            $profile->documents()->create([
+                'type' => 'CV',
+                'file_path' => $file->store('documents', 'public'),
+                'file_name' => $file->getClientOriginalName(),
+                'size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+            ]);
+        }
+
         return redirect()->route('profiles.index')->with('success', 'Profil créé avec succès.');
     }
 
@@ -171,7 +197,7 @@ class CandidateProfileController extends Controller
             'profile' => $profile,
             'projects' => $projects,
             'hasActiveContract' => $hasActiveContract,
-            'statuses' => Profile::STATUSES,
+            'statuses' => ManageableStatus::where('type', 'profile')->pluck('name'),
         ]);
     }
 
@@ -229,7 +255,35 @@ class CandidateProfileController extends Controller
         unset($data['mode_emploi'], $data['type_contrat'], $data['repos'], $data['missions'], $data['salary_period']);
         unset($data['nom'], $data['mat'], $data['statut'], $data['file_img'], $data['date_naissance'], $data['ville_o'], $data['nationalite'], $data['niveau'], $data['situation_familiale'], $data['nombre_enfant'], $data['enfants_details'], $data['adresse_cin'], $data['ville_origin'], $data['current_adresse'], $data['gsm1'], $data['gsm2'], $data['gsm_1'], $data['gsm_2'], $data['fonction']);
 
+        if (isset($data['avatar']) && $data['avatar'] instanceof \Illuminate\Http\UploadedFile) {
+            $data['avatar'] = $data['avatar']->store('avatars', 'public');
+        }
+
         $profile->update($data);
+
+        if ($request->hasFile('cin_files')) {
+            foreach ($request->file('cin_files') as $index => $file) {
+                $profile->documents()->create([
+                    'type' => 'CIN - ' . ($index === 0 ? 'Recto' : 'Verso'),
+                    'file_path' => $file->store('documents', 'public'),
+                    'file_name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'mime_type' => $file->getMimeType(),
+                ]);
+            }
+        }
+
+        if ($request->hasFile('cv_file')) {
+            $file = $request->file('cv_file');
+            $profile->documents()->create([
+                'type' => 'CV',
+                'file_path' => $file->store('documents', 'public'),
+                'file_name' => $file->getClientOriginalName(),
+                'size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+            ]);
+        }
+
         return redirect()->route('profiles.index')->with('success', 'Profil mis à jour avec succès.');
     }
 
